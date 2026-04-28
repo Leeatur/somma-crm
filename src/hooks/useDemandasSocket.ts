@@ -1,33 +1,102 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Demanda } from '../types';
 import { io, type Socket } from 'socket.io-client';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const STORAGE_KEY = 'somma_crm_demandas';
+// Render free tier pode levar até 60s para acordar
+const BACKEND_TIMEOUT_MS = 70000;
 
-export function useDemandasSocket(usuario: string) {
-  const [demandas, setDemandas] = useState<Demanda[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [, setSocket] = useState<Socket | null>(null);
+function carregarDoStorage(): Demanda[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function salvarNoStorage(demandas: Demanda[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(demandas));
+  } catch {}
+}
+
+function gerarId(): string {
+  return `local_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export type StatusConexao = 'conectando' | 'online' | 'offline';
+
+export function useDemandasSocket(usuario: string, token?: string | null) {
+  // Carrega do localStorage imediatamente — sem tela de loading
+  const [demandas, setDemandas] = useState<Demanda[]>(carregarDoStorage);
+  const [carregando] = useState(false);
+  const [statusConexao, setStatusConexao] = useState<StatusConexao>('conectando');
   const [conectado, setConectado] = useState(false);
+  const [modoOffline, setModoOffline] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
-  // Conectar ao Socket.io
+  const authHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  };
+
   useEffect(() => {
-    const newSocket = io(API_URL);
-    setSocket(newSocket);
+    if (modoOffline) salvarNoStorage(demandas);
+  }, [demandas, modoOffline]);
+
+  // Tenta conectar ao backend em background (não bloqueia a UI)
+  useEffect(() => {
+    let cancelado = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), BACKEND_TIMEOUT_MS);
+
+    setStatusConexao('conectando');
+
+    fetch(`${API_URL}/api/demandas`, { signal: controller.signal })
+      .then(res => res.json())
+      .then((data: Demanda[]) => {
+        clearTimeout(timeoutId);
+        if (cancelado) return;
+        setDemandas(data);
+        setModoOffline(false);
+        setStatusConexao('online');
+        iniciarSocket();
+      })
+      .catch(() => {
+        clearTimeout(timeoutId);
+        if (cancelado) return;
+        console.warn('[SOMMA CRM] Backend indisponível — modo offline');
+        setModoOffline(true);
+        setStatusConexao('offline');
+        // mantém dados do localStorage já carregados
+      });
+
+    return () => {
+      cancelado = true;
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function iniciarSocket() {
+    const newSocket = io(API_URL, { reconnectionAttempts: 5 });
+    socketRef.current = newSocket;
 
     newSocket.on('connect', () => {
-      console.log('🔌 Conectado ao servidor');
       setConectado(true);
-      // Identificar usuário
+      setModoOffline(false);
+      setStatusConexao('online');
       newSocket.emit('usuario:identificar', usuario);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('🔌 Desconectado do servidor');
       setConectado(false);
+      setStatusConexao('offline');
     });
 
-    // Escutar eventos de demandas
     newSocket.on('demanda:criada', (demanda: Demanda) => {
       setDemandas(prev => [demanda, ...prev]);
     });
@@ -42,108 +111,134 @@ export function useDemandasSocket(usuario: string) {
       setDemandas(prev => prev.filter(d => (d._id || d.id) !== id));
     });
 
-    return () => {
-      newSocket.close();
-    };
-  }, [usuario]);
+    return newSocket;
+  }
 
-  // Carregar demandas iniciais
   useEffect(() => {
-    carregarDemandas();
+    return () => { socketRef.current?.close(); };
   }, []);
 
-  const carregarDemandas = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/demandas`);
-      const data = await response.json();
-      setDemandas(data);
-    } catch (error) {
-      console.error('Erro ao carregar demandas:', error);
-    } finally {
-      setCarregando(false);
-    }
-  };
+  // --- CRUD ---
 
-  const adicionarDemanda = async (demanda: Omit<Demanda, 'id' | 'dataCriacao' | 'dataAtualizacao'>) => {
-    try {
-      const response = await fetch(`${API_URL}/api/demandas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...demanda, usuario }),
+  const adicionarDemanda = useCallback(async (
+    demanda: Omit<Demanda, 'id' | 'dataCriacao' | 'dataAtualizacao'>
+  ) => {
+    if (modoOffline) {
+      const now = new Date().toISOString();
+      const nova: Demanda = {
+        ...demanda,
+        id: gerarId(),
+        dataCriacao: now,
+        dataAtualizacao: now,
+        usuario,
+      } as Demanda;
+      setDemandas(prev => {
+        const atualizado = [nova, ...prev];
+        salvarNoStorage(atualizado);
+        return atualizado;
       });
-      const novaDemanda = await response.json();
-      return novaDemanda;
-    } catch (error) {
-      console.error('Erro ao adicionar demanda:', error);
-      throw error;
+      return nova;
     }
-  };
+    const response = await fetch(`${API_URL}/api/demandas`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ ...demanda, usuario }),
+    });
+    const novaDemanda = await response.json();
+    return novaDemanda;
+  }, [modoOffline, usuario]);
 
-  const atualizarDemanda = async (id: string, dados: Partial<Demanda>) => {
-    try {
-      const response = await fetch(`${API_URL}/api/demandas/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...dados, usuario }),
+  const atualizarDemanda = useCallback(async (id: string, dados: Partial<Demanda>) => {
+    if (modoOffline) {
+      const now = new Date().toISOString();
+      let atualizada: Demanda | undefined;
+      setDemandas(prev => {
+        const lista = prev.map(d => {
+          if ((d._id || d.id) === id) {
+            atualizada = { ...d, ...dados, dataAtualizacao: now };
+            return atualizada;
+          }
+          return d;
+        });
+        salvarNoStorage(lista);
+        return lista;
       });
-      const demandaAtualizada = await response.json();
-      return demandaAtualizada;
-    } catch (error) {
-      console.error('Erro ao atualizar demanda:', error);
-      throw error;
+      return atualizada;
     }
-  };
+    const response = await fetch(`${API_URL}/api/demandas/${id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ ...dados, usuario }),
+    });
+    const demandaAtualizada = await response.json();
+    return demandaAtualizada;
+  }, [modoOffline, usuario]);
 
-  const moverDemanda = async (id: string, novoStatus: Demanda['status']) => {
+  const moverDemanda = useCallback(async (id: string, novoStatus: Demanda['status']) => {
     return atualizarDemanda(id, { status: novoStatus });
-  };
+  }, [atualizarDemanda]);
 
-  const excluirDemanda = async (id: string) => {
-    try {
-      await fetch(`${API_URL}/api/demandas/${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario }),
+  const excluirDemanda = useCallback(async (id: string) => {
+    if (modoOffline) {
+      setDemandas(prev => {
+        const lista = prev.filter(d => (d._id || d.id) !== id);
+        salvarNoStorage(lista);
+        return lista;
       });
-    } catch (error) {
-      console.error('Erro ao excluir demanda:', error);
-      throw error;
+      return;
     }
-  };
+    await fetch(`${API_URL}/api/demandas/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+      body: JSON.stringify({ usuario }),
+    });
+  }, [modoOffline, usuario]);
 
   const buscarDemandas = useCallback((termo: string) => {
     if (!termo.trim()) return demandas;
     const termoLower = termo.toLowerCase();
-    return demandas.filter(
-      d =>
-        d.nomeCliente.toLowerCase().includes(termoLower) ||
-        d.marca.toLowerCase().includes(termoLower) ||
-        d.encaminhadoPara.toLowerCase().includes(termoLower) ||
-        (d.observacoes && d.observacoes.toLowerCase().includes(termoLower))
+    return demandas.filter(d =>
+      d.nomeCliente?.toLowerCase().includes(termoLower) ||
+      d.marca?.toLowerCase().includes(termoLower) ||
+      d.encaminhadoPara?.toLowerCase().includes(termoLower) ||
+      d.observacoes?.toLowerCase().includes(termoLower)
     );
   }, [demandas]);
 
   const obterEstatisticas = useCallback(async () => {
+    const local = {
+      total: demandas.length,
+      pendentes: demandas.filter(d => d.status === 'pendente').length,
+      resolvidos: demandas.filter(d => d.status === 'resolvido').length,
+      urgentes: demandas.filter(d => d.prioridade === 'urgente').length,
+      altaPrioridade: demandas.filter(d => d.prioridade === 'alta').length,
+      taxaResolucao: demandas.length > 0
+        ? Math.round((demandas.filter(d => d.status === 'resolvido').length / demandas.length) * 100)
+        : 0,
+    };
+    if (modoOffline) return local;
     try {
       const response = await fetch(`${API_URL}/api/estatisticas`);
       return await response.json();
-    } catch (error) {
-      console.error('Erro ao obter estatísticas:', error);
-      return {
-        total: demandas.length,
-        pendentes: demandas.filter(d => d.status === 'pendente').length,
-        resolvidos: demandas.filter(d => d.status === 'resolvido').length,
-        urgentes: demandas.filter(d => d.prioridade === 'urgente').length,
-        altaPrioridade: demandas.filter(d => d.prioridade === 'alta').length,
-        taxaResolucao: demandas.length > 0 ? Math.round((demandas.filter(d => d.status === 'resolvido').length / demandas.length) * 100) : 0,
-      };
+    } catch {
+      return local;
     }
-  }, [demandas]);
+  }, [demandas, modoOffline]);
+
+  const carregarDemandas = useCallback(async () => {
+    if (modoOffline) { setDemandas(carregarDoStorage()); return; }
+    try {
+      const response = await fetch(`${API_URL}/api/demandas`);
+      setDemandas(await response.json());
+    } catch {}
+  }, [modoOffline]);
 
   return {
     demandas,
     carregando,
     conectado,
+    statusConexao,
+    modoOffline,
     adicionarDemanda,
     atualizarDemanda,
     moverDemanda,

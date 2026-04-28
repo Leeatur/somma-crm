@@ -1,5 +1,11 @@
 // Tipos do CRM SOMMA
 
+export interface AuthUser {
+  id: string;
+  nome: string;
+  email: string;
+}
+
 export type TipoProblema = 
   | 'devolucao_defeito'
   | 'devolucao_atraso'
@@ -26,17 +32,26 @@ export interface Demanda {
   _id?: string;
   id: string;
   nomeCliente: string;
+  cnpj?: string;
   razaoSocial?: string;
   fantasia?: string;
   contato?: string;
   cidade?: string;
   marca: string;
+  valor?: string;
   dataContato: string;
   tipoProblema: TipoProblema;
   encaminhadoPara: string;
   status: StatusSituacao;
   prioridade: Prioridade;
   observacoes: string;
+  historicoObservacoes?: Array<{
+    id: string;
+    data: string;
+    referencias: string;
+    observacao: string;
+    valor: string;
+  }>;
   dataCriacao: string;
   dataAtualizacao: string;
   dataResolucao?: string;
@@ -80,7 +95,7 @@ export const STATUS_SITUACAO: Record<StatusSituacao, string> = {
   aguardando_retorno: 'Aguardando Retorno da Fábrica',
   solicitacao_nf_devolucao: 'Solicitação NF Devolução',
   nf_enviada_cliente: 'NF Enviada ao Cliente',
-  resolvido_parcial: 'Resolvido Parcialmente',
+  resolvido_parcial: 'Crédito em Compras Futuras',
   resolvido: 'Resolvido',
 };
 
@@ -114,6 +129,6 @@ export const COLUNAS_KANBAN: ColunaKanban[] = [
   { id: 'aguardando_retorno', titulo: 'Aguardando Retorno', cor: '#8b5cf6' },
   { id: 'solicitacao_nf_devolucao', titulo: 'Solicitação NF', cor: '#ec4899' },
   { id: 'nf_enviada_cliente', titulo: 'NF Enviada', cor: '#06b6d4' },
-  { id: 'resolvido_parcial', titulo: 'Resolvido Parcial', cor: '#f97316' },
+  { id: 'resolvido_parcial', titulo: 'Crédito em Compras Futuras', cor: '#f97316' },
   { id: 'resolvido', titulo: 'Resolvido', cor: '#10b981' },
 ];
