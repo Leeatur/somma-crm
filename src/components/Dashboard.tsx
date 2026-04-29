@@ -1,5 +1,5 @@
 import { STATUS_SITUACAO } from '../types';
-import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, Users, LogOut } from 'lucide-react';
+import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, Users, LogOut, FileText } from 'lucide-react';
 
 interface DashboardProps {
   estatisticas: {
@@ -17,6 +17,7 @@ interface DashboardProps {
   visualizacao: 'kanban' | 'lista';
   setVisualizacao: (tipo: 'kanban' | 'lista') => void;
   onNovaDemanda: () => void;
+  onRelatorio: () => void;
   nomeUsuario: string;
   statusConexao: 'conectando' | 'online' | 'offline';
   onLogout: () => void;
@@ -31,6 +32,7 @@ export function Dashboard({
   visualizacao,
   setVisualizacao,
   onNovaDemanda,
+  onRelatorio,
   nomeUsuario,
   statusConexao,
   onLogout,
@@ -59,6 +61,10 @@ export function Dashboard({
             <Users size={14} />
             {nomeUsuario}
             <LogOut size={13} style={{ opacity: 0.7 }} />
+          </button>
+          <button className="btn-relatorio" onClick={onRelatorio} title="Ver Relatório">
+            <FileText size={16} />
+            <span className="btn-rel-text">Relatório</span>
           </button>
           <button className="btn-nova-demanda" onClick={onNovaDemanda}>
             <span className="btn-nova-inner">
@@ -285,6 +291,30 @@ export function Dashboard({
           font-weight: 400;
           margin-top: 3px;
           letter-spacing: 0.02em;
+        }
+
+        /* ── Relatório button ── */
+        .btn-relatorio {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          padding: 10px 16px;
+          background: var(--color-white);
+          color: var(--color-primary);
+          border: 1.5px solid var(--color-border);
+          border-radius: var(--radius-md);
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: var(--transition-smooth);
+          white-space: nowrap;
+          box-shadow: var(--shadow-xs);
+        }
+
+        .btn-relatorio:hover {
+          border-color: var(--color-gold);
+          color: var(--color-gold);
+          box-shadow: 0 0 0 3px var(--color-gold-dim);
         }
 
         /* ── Nova Demanda button ── */

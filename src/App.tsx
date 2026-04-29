@@ -6,6 +6,7 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { ListaDemandas } from './components/ListaDemandas';
 import { ModalDemanda } from './components/ModalDemanda';
 import { FicharioDemanda } from './components/FicharioDemanda';
+import { Relatorio } from './components/Relatorio';
 import { LoginPage } from './components/LoginPage';
 
 const TOKEN_KEY = 'somma-auth-token';
@@ -48,6 +49,7 @@ function App() {
   const [modalAberto, setModalAberto] = useState(false);
   const [demandaEditando, setDemandaEditando] = useState<Demanda | null>(null);
   const [demandaFichario, setDemandaFichario] = useState<Demanda | null>(null);
+  const [relatorioAberto, setRelatorioAberto] = useState(false);
   const [estatisticas, setEstatisticas] = useState({
     total: 0,
     pendentes: 0,
@@ -148,6 +150,7 @@ function App() {
         visualizacao={visualizacao}
         setVisualizacao={setVisualizacao}
         onNovaDemanda={handleNovaDemanda}
+        onRelatorio={() => setRelatorioAberto(true)}
         nomeUsuario={usuario.nome}
         statusConexao={statusConexao}
         onLogout={handleLogout}
@@ -185,6 +188,13 @@ function App() {
         <FicharioDemanda
           demanda={demandaFichario}
           onFechar={() => setDemandaFichario(null)}
+        />
+      )}
+
+      {relatorioAberto && (
+        <Relatorio
+          demandas={demandas}
+          onFechar={() => setRelatorioAberto(false)}
         />
       )}
 
