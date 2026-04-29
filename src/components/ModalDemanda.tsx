@@ -39,8 +39,9 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
   const [formData, setFormData] = useState<Partial<Demanda>>({
     nomeCliente: demanda?.nomeCliente || '',
     cnpj: demanda?.cnpj || '',
-    status: demanda?.status || 'pendente',
+    status: demanda?.status || 'aguardando_retorno_fabrica',
     contato: demanda?.contato || '',
+    representante: demanda?.representante || '',
     marca: demanda?.marca || '',
     valor: demanda?.valor || '',
     observacoes: demanda?.observacoes || '',
@@ -154,6 +155,16 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
                 placeholder="00.000.000/0000-00"
                 inputMode="numeric"
                 maxLength={18}
+              />
+            </div>
+
+            <div className="form-group">
+              <label><User size={16} />Representante</label>
+              <input
+                type="text"
+                value={formData.representante}
+                onChange={e => setFormData(prev => ({ ...prev, representante: e.target.value }))}
+                placeholder="Nome do representante"
               />
             </div>
 

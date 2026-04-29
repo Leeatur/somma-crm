@@ -208,12 +208,12 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
   const obterEstatisticas = useCallback(async () => {
     const local = {
       total: demandas.length,
-      pendentes: demandas.filter(d => d.status === 'pendente').length,
-      resolvidos: demandas.filter(d => d.status === 'resolvido').length,
+      pendentes: demandas.filter(d => d.status !== 'resolvido_finalizado').length,
+      resolvidos: demandas.filter(d => d.status === 'resolvido_finalizado').length,
       urgentes: demandas.filter(d => d.prioridade === 'urgente').length,
       altaPrioridade: demandas.filter(d => d.prioridade === 'alta').length,
       taxaResolucao: demandas.length > 0
-        ? Math.round((demandas.filter(d => d.status === 'resolvido').length / demandas.length) * 100)
+        ? Math.round((demandas.filter(d => d.status === 'resolvido_finalizado').length / demandas.length) * 100)
         : 0,
     };
     if (modoOffline) return local;

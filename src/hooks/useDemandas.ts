@@ -55,7 +55,7 @@ export function useDemandas() {
               ...d,
               status: novoStatus,
               dataAtualizacao: new Date().toISOString(),
-              ...(novoStatus === 'resolvido' ? { dataResolucao: new Date().toISOString() } : {}),
+              ...(novoStatus === 'resolvido_finalizado' ? { dataResolucao: new Date().toISOString() } : {}),
             }
           : d
       )
@@ -85,8 +85,8 @@ export function useDemandas() {
 
   const obterEstatisticas = () => {
     const total = demandas.length;
-    const pendentes = demandas.filter(d => d.status === 'pendente').length;
-    const resolvidos = demandas.filter(d => d.status === 'resolvido').length;
+    const pendentes = demandas.filter(d => d.status !== 'resolvido_finalizado').length;
+    const resolvidos = demandas.filter(d => d.status === 'resolvido_finalizado').length;
     const urgentes = demandas.filter(d => d.prioridade === 'urgente').length;
     const altaPrioridade = demandas.filter(d => d.prioridade === 'alta').length;
 

@@ -17,14 +17,13 @@ export type TipoProblema =
   | 'troca_mercadoria'
   | 'outros';
 
-export type StatusSituacao = 
-  | 'pendente'
-  | 'encaminhado_fabrica'
-  | 'aguardando_retorno'
-  | 'solicitacao_nf_devolucao'
-  | 'nf_enviada_cliente'
-  | 'resolvido_parcial'
-  | 'resolvido';
+export type StatusSituacao =
+  | 'aguardando_retorno_fabrica'
+  | 'aguardando_nf_cliente'
+  | 'aguardando_nf_fabrica'
+  | 'aguardando_desconto'
+  | 'credito_compras_futuras'
+  | 'resolvido_finalizado';
 
 export type Prioridade = 'baixa' | 'media' | 'alta' | 'urgente';
 
@@ -37,6 +36,7 @@ export interface Demanda {
   fantasia?: string;
   contato?: string;
   cidade?: string;
+  representante?: string;
   marca: string;
   valor?: string;
   dataContato: string;
@@ -90,13 +90,12 @@ export const TIPOS_PROBLEMA: Record<TipoProblema, string> = {
 };
 
 export const STATUS_SITUACAO: Record<StatusSituacao, string> = {
-  pendente: 'Pendente',
-  encaminhado_fabrica: 'Encaminhado para Fábrica',
-  aguardando_retorno: 'Aguardando Retorno da Fábrica',
-  solicitacao_nf_devolucao: 'Solicitação NF Devolução',
-  nf_enviada_cliente: 'NF Enviada ao Cliente',
-  resolvido_parcial: 'Crédito em Compras Futuras',
-  resolvido: 'Resolvido',
+  aguardando_retorno_fabrica: 'Aguardando Retorno da Fábrica',
+  aguardando_nf_cliente: 'Aguardando NF do Cliente',
+  aguardando_nf_fabrica: 'Aguardando NF da Fábrica',
+  aguardando_desconto: 'Aguardando Desconto',
+  credito_compras_futuras: 'Crédito para Abater em Compras Futuras',
+  resolvido_finalizado: 'Resolvido/Finalizado',
 };
 
 export const PRIORIDADES: Record<Prioridade, string> = {
@@ -107,13 +106,12 @@ export const PRIORIDADES: Record<Prioridade, string> = {
 };
 
 export const CORES_STATUS: Record<StatusSituacao, string> = {
-  pendente: '#f59e0b',
-  encaminhado_fabrica: '#3b82f6',
-  aguardando_retorno: '#8b5cf6',
-  solicitacao_nf_devolucao: '#ec4899',
-  nf_enviada_cliente: '#06b6d4',
-  resolvido_parcial: '#f97316',
-  resolvido: '#10b981',
+  aguardando_retorno_fabrica: '#8b5cf6',
+  aguardando_nf_cliente: '#3b82f6',
+  aguardando_nf_fabrica: '#06b6d4',
+  aguardando_desconto: '#f59e0b',
+  credito_compras_futuras: '#f97316',
+  resolvido_finalizado: '#10b981',
 };
 
 export const CORES_PRIORIDADE: Record<Prioridade, string> = {
@@ -124,11 +122,10 @@ export const CORES_PRIORIDADE: Record<Prioridade, string> = {
 };
 
 export const COLUNAS_KANBAN: ColunaKanban[] = [
-  { id: 'pendente', titulo: 'Pendente', cor: '#f59e0b' },
-  { id: 'encaminhado_fabrica', titulo: 'Encaminhado Fábrica', cor: '#3b82f6' },
-  { id: 'aguardando_retorno', titulo: 'Aguardando Retorno', cor: '#8b5cf6' },
-  { id: 'solicitacao_nf_devolucao', titulo: 'Solicitação NF', cor: '#ec4899' },
-  { id: 'nf_enviada_cliente', titulo: 'NF Enviada', cor: '#06b6d4' },
-  { id: 'resolvido_parcial', titulo: 'Crédito em Compras Futuras', cor: '#f97316' },
-  { id: 'resolvido', titulo: 'Resolvido', cor: '#10b981' },
+  { id: 'aguardando_retorno_fabrica', titulo: 'Aguardando Retorno da Fábrica', cor: '#8b5cf6' },
+  { id: 'aguardando_nf_cliente', titulo: 'Aguardando NF do Cliente', cor: '#3b82f6' },
+  { id: 'aguardando_nf_fabrica', titulo: 'Aguardando NF da Fábrica', cor: '#06b6d4' },
+  { id: 'aguardando_desconto', titulo: 'Aguardando Desconto', cor: '#f59e0b' },
+  { id: 'credito_compras_futuras', titulo: 'Crédito p/ Compras Futuras', cor: '#f97316' },
+  { id: 'resolvido_finalizado', titulo: 'Resolvido/Finalizado', cor: '#10b981' },
 ];
