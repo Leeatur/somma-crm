@@ -4,7 +4,7 @@ import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { Demanda } from '../types';
 import { COLUNAS_KANBAN, TIPOS_PROBLEMA, PRIORIDADES, CORES_PRIORIDADE } from '../types';
-import { Calendar, User, Building2, AlertCircle, Clock, MoreVertical, Edit2, Trash2, GripVertical, FolderOpen } from 'lucide-react';
+import { Calendar, User, Building2, AlertCircle, Clock, MoreVertical, Edit2, Trash2, GripVertical, FolderOpen, DollarSign } from 'lucide-react';
 
 interface KanbanBoardProps {
   demandas: Demanda[];
@@ -94,6 +94,10 @@ function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = f
         <div className="card-main" onClick={() => onEditar(demanda)}>
           <h4 className="card-client">{demanda.nomeCliente}</h4>
 
+          {demanda.cnpj && (
+            <div className="card-cnpj">{demanda.cnpj}</div>
+          )}
+
           <div className="card-meta">
             <span className="card-meta-item">
               <Building2 size={11} /> {demanda.marca}
@@ -101,23 +105,18 @@ function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = f
             <span className="card-meta-item">
               <AlertCircle size={11} /> {TIPOS_PROBLEMA[demanda.tipoProblema]}
             </span>
+            {(demanda as any).representante && (
+              <span className="card-meta-item">
+                <User size={11} /> {(demanda as any).representante}
+              </span>
+            )}
           </div>
 
-          {demanda.encaminhadoPara && (
-            <div className="card-assigned">
-              <User size={11} />
-              <span>{demanda.encaminhadoPara}</span>
+          {demanda.valor && (
+            <div className="card-valor">
+              <DollarSign size={11} />
+              R$ {demanda.valor}
             </div>
-          )}
-
-          {demanda.observacoes && !demanda.observacoes.startsWith('[') && (
-            <div
-              className="card-obs rich-text-content"
-              dangerouslySetInnerHTML={{
-                __html: demanda.observacoes.substring(0, 90) +
-                  (demanda.observacoes.length > 90 ? '…' : ''),
-              }}
-            />
           )}
         </div>
 
@@ -227,17 +226,24 @@ export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onV
         /* ── Board ── */
         .kanban-board {
           display: flex;
-          gap: 10px;
-          overflow-x: hidden;
-          padding: 4px 0 28px;
+          gap: 14px;
+          overflow-x: auto;
+          padding: 4px 4px 28px;
           min-height: calc(100vh - 290px);
           align-items: flex-start;
+          scrollbar-width: thin;
+          scrollbar-color: var(--color-border) transparent;
         }
+
+        .kanban-board::-webkit-scrollbar { height: 6px; }
+        .kanban-board::-webkit-scrollbar-track { background: transparent; }
+        .kanban-board::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 99px; }
 
         /* ── Column ── */
         .kanban-column {
-          flex: 1;
-          min-width: 0;
+          flex: 0 0 300px;
+          width: 300px;
+          min-width: 300px;
           display: flex;
           flex-direction: column;
           border-radius: var(--radius-lg);
@@ -542,25 +548,34 @@ export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onV
           font-weight: 600;
         }
 
+        /* CNPJ */
+        .card-cnpj {
+          font-size: 0.6875rem;
+          color: var(--color-text-muted);
+          letter-spacing: 0.04em;
+          margin-bottom: 4px;
+        }
+
+        /* Valor */
+        .card-valor {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #15803d;
+          background: #dcfce7;
+          padding: 3px 8px;
+          border-radius: var(--radius-sm);
+          margin-bottom: 4px;
+        }
+
         /* ── Responsive ── */
-        @media (max-width: 1400px) {
-          .column-title-text { font-size: 0.6875rem; }
-        }
-
-        @media (max-width: 1100px) {
-          .kanban-board { gap: 7px; }
-          .column-header { padding: 10px 10px; }
-          .column-cards { padding: 6px; gap: 6px; }
-        }
-
         @media (max-width: 900px) {
-          .kanban-board {
-            overflow-x: auto;
-            gap: 10px;
-          }
           .kanban-column {
-            min-width: 240px;
-            flex: 0 0 240px;
+            flex: 0 0 260px;
+            width: 260px;
+            min-width: 260px;
           }
         }
       `}</style>
