@@ -4,7 +4,29 @@ import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { Demanda } from '../types';
 import { COLUNAS_KANBAN, TIPOS_PROBLEMA, PRIORIDADES, CORES_PRIORIDADE } from '../types';
-import { Calendar, User, Building2, AlertCircle, Clock, MoreVertical, Edit2, Trash2, GripVertical, FolderOpen, DollarSign } from 'lucide-react';
+import { Calendar, User, Building2, AlertCircle, Clock, MoreVertical, Edit2, Trash2, GripVertical, FolderOpen, DollarSign, ChevronDown, ChevronUp, Phone } from 'lucide-react';
+
+interface EntradaHistorico {
+  id: string;
+  data: string;
+  referencias: string;
+  observacao: string;
+  valor: string;
+}
+
+function parseHistorico(obs: string | undefined): EntradaHistorico[] {
+  if (!obs) return [];
+  try {
+    const parsed = JSON.parse(obs);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {}
+  return [];
+}
+
+function getHistorico(demanda: Demanda): EntradaHistorico[] {
+  if (demanda.historicoObservacoes?.length) return demanda.historicoObservacoes as EntradaHistorico[];
+  return parseHistorico(demanda.observacoes);
+}
 
 interface KanbanBoardProps {
   demandas: Demanda[];
@@ -24,6 +46,8 @@ interface KanbanCardProps {
 
 function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = false }: KanbanCardProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [expandido, setExpandido] = useState(false);
+
   const {
     attributes,
     listeners,
@@ -43,11 +67,14 @@ function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = f
     (new Date().getTime() - new Date(demanda.dataCriacao).getTime()) / (1000 * 60 * 60 * 24)
   );
 
+  const historico = getHistorico(demanda);
+  const ultimaEntrada = historico[0];
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`kanban-card ${isOverlay ? 'is-overlay' : ''}`}
+      className={`kanban-card ${isOverlay ? 'is-overlay' : ''} ${expandido ? 'expandido' : ''}`}
     >
       {/* Drag handle strip */}
       <div className="card-drag-strip" {...attributes} {...listeners}>
@@ -55,7 +82,7 @@ function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = f
       </div>
 
       <div className="card-body">
-        {/* Header row: priority badge + menu */}
+        {/* Header row: priority badge + expand + menu */}
         <div className="card-toprow">
           <span
             className="card-priority-badge"
@@ -64,34 +91,43 @@ function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = f
             {PRIORIDADES[demanda.prioridade]}
           </span>
 
-          <div className="card-menu-wrap">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <button
-              className="card-menu-trigger"
-              onClick={e => { e.stopPropagation(); setShowMenu(s => !s); }}
+              className="card-expand-trigger"
+              onClick={e => { e.stopPropagation(); setExpandido(s => !s); }}
+              title={expandido ? 'Recolher' : 'Expandir'}
             >
-              <MoreVertical size={14} />
+              {expandido ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
-            {showMenu && (
-              <div className="card-menu">
-                <button onClick={() => { onVerFichario(demanda); setShowMenu(false); }}>
-                  <FolderOpen size={13} /> Ver Fichário
-                </button>
-                <button onClick={() => { onEditar(demanda); setShowMenu(false); }}>
-                  <Edit2 size={13} /> Editar
-                </button>
-                <button
-                  className="danger"
-                  onClick={() => { onExcluir(demanda._id || demanda.id); setShowMenu(false); }}
-                >
-                  <Trash2 size={13} /> Excluir
-                </button>
-              </div>
-            )}
+            <div className="card-menu-wrap">
+              <button
+                className="card-menu-trigger"
+                onClick={e => { e.stopPropagation(); setShowMenu(s => !s); }}
+              >
+                <MoreVertical size={14} />
+              </button>
+              {showMenu && (
+                <div className="card-menu">
+                  <button onClick={() => { onVerFichario(demanda); setShowMenu(false); }}>
+                    <FolderOpen size={13} /> Ver Fichário
+                  </button>
+                  <button onClick={() => { onEditar(demanda); setShowMenu(false); }}>
+                    <Edit2 size={13} /> Editar
+                  </button>
+                  <button
+                    className="danger"
+                    onClick={() => { onExcluir(demanda._id || demanda.id); setShowMenu(false); }}
+                  >
+                    <Trash2 size={13} /> Excluir
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Main content */}
-        <div className="card-main" onClick={() => onEditar(demanda)}>
+        {/* Main content — sempre visível */}
+        <div className="card-main" onClick={() => setExpandido(s => !s)}>
           <h4 className="card-client">{demanda.nomeCliente}</h4>
 
           {demanda.cnpj && (
@@ -102,23 +138,46 @@ function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = f
             <span className="card-meta-item">
               <Building2 size={11} /> {demanda.marca}
             </span>
-            <span className="card-meta-item">
-              <AlertCircle size={11} /> {TIPOS_PROBLEMA[demanda.tipoProblema]}
-            </span>
-            {(demanda as any).representante && (
-              <span className="card-meta-item">
-                <User size={11} /> {(demanda as any).representante}
-              </span>
-            )}
           </div>
-
-          {demanda.valor && (
-            <div className="card-valor">
-              <DollarSign size={11} />
-              R$ {demanda.valor}
-            </div>
-          )}
         </div>
+
+        {/* Conteúdo expandido */}
+        {expandido && (
+          <div className="card-expandido">
+            <div className="card-expand-row">
+              <AlertCircle size={11} />
+              <span>{TIPOS_PROBLEMA[demanda.tipoProblema]}</span>
+            </div>
+            {demanda.representante && (
+              <div className="card-expand-row">
+                <User size={11} />
+                <span>{demanda.representante}</span>
+              </div>
+            )}
+            {demanda.contato && (
+              <div className="card-expand-row">
+                <Phone size={11} />
+                <span>{demanda.contato}</span>
+              </div>
+            )}
+            {demanda.valor && (
+              <div className="card-expand-row valor">
+                <DollarSign size={11} />
+                <span>R$ {demanda.valor}</span>
+              </div>
+            )}
+            {ultimaEntrada && (
+              <div className="card-expand-obs">
+                <span className="expand-obs-label">Última obs.:</span>
+                <span className="expand-obs-data">{ultimaEntrada.data}</span>
+                <p className="expand-obs-texto">{ultimaEntrada.observacao}</p>
+              </div>
+            )}
+            <button className="btn-editar-expandido" onClick={() => onEditar(demanda)}>
+              <Edit2 size={12} /> Editar demanda
+            </button>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="card-footer">
@@ -467,6 +526,22 @@ export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onV
         .card-menu button.danger { color: var(--color-danger); }
         .card-menu button.danger:hover { background: #fff1f2; }
 
+        /* Expand trigger */
+        .card-expand-trigger {
+          background: none;
+          border: none;
+          padding: 3px;
+          cursor: pointer;
+          color: var(--color-text-muted);
+          border-radius: var(--radius-xs);
+          display: flex;
+          transition: var(--transition-fast);
+        }
+        .card-expand-trigger:hover {
+          background: var(--color-cream);
+          color: var(--color-gold);
+        }
+
         /* Card main (clickable) */
         .card-main { cursor: pointer; }
 
@@ -548,6 +623,12 @@ export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onV
           font-weight: 600;
         }
 
+        /* Expanded state */
+        .kanban-card.expandido {
+          border-color: var(--color-gold);
+          box-shadow: 0 0 0 2px var(--color-gold-dim), var(--shadow-md);
+        }
+
         /* CNPJ */
         .card-cnpj {
           font-size: 0.6875rem;
@@ -556,18 +637,84 @@ export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onV
           margin-bottom: 4px;
         }
 
-        /* Valor */
-        .card-valor {
-          display: inline-flex;
+        /* Conteúdo expandido */
+        .card-expandido {
+          border-top: 1px dashed var(--color-border);
+          padding-top: 10px;
+          margin-top: 4px;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+          animation: fadeIn 0.15s ease-out;
+        }
+
+        .card-expand-row {
+          display: flex;
           align-items: center;
-          gap: 3px;
+          gap: 5px;
           font-size: 0.75rem;
+          color: var(--color-text-light);
+        }
+
+        .card-expand-row.valor {
           font-weight: 700;
           color: #15803d;
           background: #dcfce7;
           padding: 3px 8px;
           border-radius: var(--radius-sm);
-          margin-bottom: 4px;
+          align-self: flex-start;
+        }
+
+        .card-expand-obs {
+          background: var(--color-cream);
+          border-radius: var(--radius-sm);
+          padding: 8px 10px;
+          margin-top: 2px;
+        }
+
+        .expand-obs-label {
+          font-size: 0.6875rem;
+          font-weight: 700;
+          color: var(--color-text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .expand-obs-data {
+          font-size: 0.6875rem;
+          color: #0369a1;
+          background: #e0f2fe;
+          padding: 1px 6px;
+          border-radius: 99px;
+          margin-left: 6px;
+        }
+
+        .expand-obs-texto {
+          font-size: 0.8rem;
+          color: var(--color-text);
+          line-height: 1.45;
+          margin: 5px 0 0;
+        }
+
+        .btn-editar-expandido {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 12px;
+          background: var(--color-primary);
+          color: var(--color-white);
+          border: none;
+          border-radius: var(--radius-sm);
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          margin-top: 4px;
+          transition: background 0.2s;
+          align-self: flex-start;
+        }
+
+        .btn-editar-expandido:hover {
+          background: #1a4a7a;
         }
 
         /* ── Responsive ── */

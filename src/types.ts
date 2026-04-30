@@ -19,6 +19,7 @@ export type TipoProblema =
 
 export type StatusSituacao =
   | 'aguardando_retorno_fabrica'
+  | 'aguardando_retorno_cliente'
   | 'aguardando_nf_cliente'
   | 'aguardando_nf_fabrica'
   | 'aguardando_desconto'
@@ -91,6 +92,7 @@ export const TIPOS_PROBLEMA: Record<TipoProblema, string> = {
 
 export const STATUS_SITUACAO: Record<StatusSituacao, string> = {
   aguardando_retorno_fabrica: 'Aguardando Retorno da Fábrica',
+  aguardando_retorno_cliente: 'Aguardando Retorno do Cliente',
   aguardando_nf_cliente: 'Aguardando NF do Cliente',
   aguardando_nf_fabrica: 'Aguardando NF da Fábrica',
   aguardando_desconto: 'Aguardando Desconto',
@@ -107,6 +109,7 @@ export const PRIORIDADES: Record<Prioridade, string> = {
 
 export const CORES_STATUS: Record<StatusSituacao, string> = {
   aguardando_retorno_fabrica: '#8b5cf6',
+  aguardando_retorno_cliente: '#ec4899',
   aguardando_nf_cliente: '#3b82f6',
   aguardando_nf_fabrica: '#06b6d4',
   aguardando_desconto: '#f59e0b',
@@ -123,6 +126,7 @@ export const CORES_PRIORIDADE: Record<Prioridade, string> = {
 
 export const COLUNAS_KANBAN: ColunaKanban[] = [
   { id: 'aguardando_retorno_fabrica', titulo: 'Aguardando Retorno da Fábrica', cor: '#8b5cf6' },
+  { id: 'aguardando_retorno_cliente', titulo: 'Aguardando Retorno do Cliente', cor: '#ec4899' },
   { id: 'aguardando_nf_cliente', titulo: 'Aguardando NF do Cliente', cor: '#3b82f6' },
   { id: 'aguardando_nf_fabrica', titulo: 'Aguardando NF da Fábrica', cor: '#06b6d4' },
   { id: 'aguardando_desconto', titulo: 'Aguardando Desconto', cor: '#f59e0b' },
