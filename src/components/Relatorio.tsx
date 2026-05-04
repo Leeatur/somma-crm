@@ -115,34 +115,61 @@ function buildPrintHtml(
   <title>Relatório de Demandas — SOMMA</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#fff; color:#1a1a1a; padding: 20mm 10mm 10mm 20mm; font-size:8pt; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff; color: #1a1a1a; font-size: 8pt;
+      padding: 14mm 10mm 10mm 20mm;
+    }
     @page {
       margin-top: 20mm;
       margin-left: 20mm;
       margin-bottom: 10mm;
       margin-right: 10mm;
     }
+
+    /* Cabeçalho fixo — aparece em TODAS as páginas */
+    .print-cabecalho {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 7px;
+      border-bottom: 2px solid #0d2e58;
+      margin-bottom: 12px;
+    }
+
     @media print {
-      body {
-        padding: 0;
-        margin-top: 20mm;
-        margin-left: 20mm;
-        margin-bottom: 10mm;
-        margin-right: 10mm;
+      body { padding: 0; }
+
+      .print-cabecalho {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        background: #fff;
+        padding: 4mm 10mm 3mm 20mm;
+        border-bottom: 2px solid #0d2e58;
+        margin-bottom: 0;
+        z-index: 999;
+      }
+
+      /* empurra o conteúdo para baixo do cabeçalho fixo */
+      .print-content {
+        margin-top: 14mm;
       }
     }
+
     td, th { font-family: inherit; }
     table { border-collapse: collapse; }
   </style>
 </head>
 <body>
-  <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:2px solid #0d2e58;margin-bottom:14px">
+  <div class="print-cabecalho">
     <div>
-      <div style="font-size:13pt;font-weight:800;color:#0d2e58">SOMMA — Relatório de Demandas</div>
-      <div style="font-size:8pt;color:#888;margin-top:2px">${dataHoje} · ${demandas.length} demandas no total</div>
+      <div style="font-size:12pt;font-weight:800;color:#0d2e58">SOMMA — Relatório de Demandas</div>
+      <div style="font-size:7.5pt;color:#888;margin-top:2px">${dataHoje} · ${demandas.length} demandas no total</div>
     </div>
   </div>
-  ${blocks}
+  <div class="print-content">
+    ${blocks}
+  </div>
 </body>
 </html>`;
 }
