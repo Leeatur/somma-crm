@@ -1,6 +1,6 @@
 import type { Demanda } from '../types';
 import { STATUS_SITUACAO, CORES_STATUS } from '../types';
-import { X, User, Building2, Phone, DollarSign, CalendarDays, Tag, FileText, Hash, Edit2, Trash2 } from 'lucide-react';
+import { X, User, Building2, Phone, DollarSign, CalendarDays, Tag, FileText, Hash, Edit2, Trash2, MapPin } from 'lucide-react';
 
 interface EntradaHistorico {
   id: string;
@@ -94,16 +94,24 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: Fich
                 <span className="fich-field-value">{demanda.cnpj || '—'}</span>
               </div>
               <div className="fich-field">
-                <span className="fich-field-label"><Phone size={13} />Telefone</span>
+                <span className="fich-field-label"><Phone size={13} />Contato</span>
                 <span className="fich-field-value">{demanda.contato || '—'}</span>
+              </div>
+              <div className="fich-field">
+                <span className="fich-field-label"><MapPin size={13} />Cidade</span>
+                <span className="fich-field-value">{demanda.cidade || '—'}</span>
               </div>
               <div className="fich-field">
                 <span className="fich-field-label"><Building2 size={13} />Marca</span>
                 <span className="fich-field-value">{demanda.marca || '—'}</span>
               </div>
               <div className="fich-field">
-                <span className="fich-field-label"><DollarSign size={13} />Valor</span>
-                <span className="fich-field-value">{demanda.valor ? `R$ ${demanda.valor}` : '—'}</span>
+                <span className="fich-field-label"><User size={13} />Representante</span>
+                <span className="fich-field-value">{(demanda as any).representante || '—'}</span>
+              </div>
+              <div className="fich-field">
+                <span className="fich-field-label"><DollarSign size={13} />Valor Total</span>
+                <span className="fich-field-value" style={{ color: '#15803d', fontWeight: 700 }}>{demanda.valor ? `R$ ${demanda.valor}` : '—'}</span>
               </div>
               <div className="fich-field">
                 <span className="fich-field-label"><CalendarDays size={13} />Aberto em</span>

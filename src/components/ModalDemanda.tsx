@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Demanda } from '../types';
 import { STATUS_SITUACAO } from '../types';
-import { X, User, Building2, Phone, DollarSign, Package, CheckCircle2, Plus, Trash2, CalendarDays, Tag, FileText } from 'lucide-react';
+import { X, User, Building2, Phone, DollarSign, Package, CheckCircle2, Plus, Trash2, CalendarDays, Tag, FileText, MapPin } from 'lucide-react';
 
 interface EntradaHistorico {
   id: string;
@@ -41,6 +41,7 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
     cnpj: demanda?.cnpj || '',
     status: demanda?.status || 'aguardando_retorno_fabrica',
     contato: demanda?.contato || '',
+    cidade: demanda?.cidade || '',
     representante: demanda?.representante || '',
     marca: demanda?.marca || '',
     valor: demanda?.valor || '',
@@ -58,6 +59,16 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
   const [adicionando, setAdicionando] = useState(false);
 
   const historico = (formData.historicoObservacoes as EntradaHistorico[]) || [];
+
+  // Soma automática dos valores do histórico
+  const somaHistorico = historico.reduce((acc, e) => {
+    const v = parseFloat(e.valor?.replace(',', '.') || '0');
+    return acc + (isNaN(v) ? 0 : v);
+  }, 0);
+
+  const somaFormatada = somaHistorico > 0
+    ? somaHistorico.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,7 +193,7 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
             </div>
 
             <div className="form-group">
-              <label><Phone size={16} />Telefone</label>
+              <label><Phone size={16} />Contato (Telefone)</label>
               <input
                 type="text"
                 value={formData.contato}
@@ -190,6 +201,16 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
                 placeholder="(00) 00000-0000"
                 inputMode="numeric"
                 maxLength={16}
+              />
+            </div>
+
+            <div className="form-group">
+              <label><MapPin size={16} />Cidade</label>
+              <input
+                type="text"
+                value={formData.cidade}
+                onChange={e => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
+                placeholder="Cidade do cliente"
               />
             </div>
 
@@ -205,14 +226,30 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
             </div>
 
             <div className="form-group">
-              <label><DollarSign size={16} />Valor</label>
-              <input
-                type="text"
-                value={formData.valor}
-                onChange={e => setFormData(prev => ({ ...prev, valor: e.target.value.replace(/[^\d,]/g, '') }))}
-                placeholder="0,00"
-                inputMode="decimal"
-              />
+              <label><DollarSign size={16} />Valor Total</label>
+              <div className="valor-wrap">
+                <input
+                  type="text"
+                  value={formData.valor}
+                  onChange={e => setFormData(prev => ({ ...prev, valor: e.target.value.replace(/[^\d,]/g, '') }))}
+                  placeholder="0,00"
+                  inputMode="decimal"
+                  className={somaFormatada ? 'valor-com-soma' : ''}
+                />
+                {somaFormatada && (
+                  <div className="valor-soma-hint">
+                    <DollarSign size={12} />
+                    Soma do histórico: <strong>R$ {somaFormatada}</strong>
+                    <button
+                      type="button"
+                      className="btn-usar-soma"
+                      onClick={() => setFormData(prev => ({ ...prev, valor: somaFormatada }))}
+                    >
+                      Usar
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -386,6 +423,28 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
           outline: none; border-color: var(--color-gold); box-shadow: 0 0 0 3px var(--color-gold-dim);
         }
         .form-group input::placeholder, .form-group textarea::placeholder { color: var(--color-text-muted); }
+
+        /* Valor com soma */
+        .valor-wrap { display: flex; flex-direction: column; gap: 6px; }
+        .valor-com-soma { border-color: var(--color-gold) !important; }
+        .valor-soma-hint {
+          display: flex; align-items: center; gap: 5px;
+          font-size: 0.75rem; color: #15803d;
+          background: #dcfce7; border-radius: var(--radius-sm);
+          padding: 5px 10px;
+        }
+        .btn-usar-soma {
+          margin-left: auto;
+          padding: 2px 10px;
+          background: #15803d;
+          color: white;
+          border: none;
+          border-radius: 99px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .btn-usar-soma:hover { background: #166534; }
 
         /* Histórico */
         .historico-section { margin-bottom: 20px; }
