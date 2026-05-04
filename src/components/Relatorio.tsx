@@ -1,7 +1,7 @@
-import { useRef } from 'react';
-import { Printer, X } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Printer, X, Filter } from 'lucide-react';
 import type { Demanda } from '../types';
-import { COLUNAS_KANBAN, TIPOS_PROBLEMA } from '../types';
+import { COLUNAS_KANBAN } from '../types';
 
 interface RelatorioProps {
   demandas: Demanda[];
@@ -31,100 +31,177 @@ function getHistorico(demanda: Demanda): EntradaHistorico[] {
   return parseHistorico(demanda.observacoes);
 }
 
-export function Relatorio({ demandas, onFechar }: RelatorioProps) {
-  const printRef = useRef<HTMLDivElement>(null);
+function formatDate(iso: string) {
+  if (!iso) return '—';
+  const parts = iso.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return iso;
+}
 
-  const handlePrint = () => {
-    window.print();
-  };
+export function Relatorio({ demandas, onFechar }: RelatorioProps) {
+  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const printRef = useRef<HTMLDivElement>(null);
 
   const demandasPorStatus = COLUNAS_KANBAN.map(coluna => ({
     coluna,
     demandas: demandas.filter(d => d.status === coluna.id),
   }));
 
+  const statusVisiveis = filtroStatus === 'todos'
+    ? demandasPorStatus
+    : demandasPorStatus.filter(s => s.coluna.id === filtroStatus);
+
+  const totalGeral = filtroStatus === 'todos'
+    ? demandas.length
+    : (demandasPorStatus.find(s => s.coluna.id === filtroStatus)?.demandas.length ?? 0);
+
   return (
-    <div className="relatorio-overlay">
-      <div className="relatorio-container" ref={printRef}>
-        {/* Header */}
-        <div className="relatorio-header no-print">
-          <div className="relatorio-titulo">
-            <span className="relatorio-logo">S</span>
+    <div className="rel-overlay">
+      <div className="rel-container" ref={printRef}>
+
+        {/* ── Header ── */}
+        <div className="rel-header no-print">
+          <div className="rel-header-left">
+            <div className="rel-logo">S</div>
             <div>
-              <h2>SOMMA — Relatório de Demandas</h2>
-              <p>{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+              <h2 className="rel-title">Relatório de Demandas</h2>
+              <p className="rel-date">
+                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+              </p>
             </div>
           </div>
-          <div className="relatorio-acoes">
-            <button className="btn-print" onClick={handlePrint}>
-              <Printer size={16} />
-              Imprimir
+          <div className="rel-header-right">
+            <button className="rel-btn-print" onClick={() => window.print()}>
+              <Printer size={15} /> Imprimir
             </button>
-            <button className="btn-fechar-rel" onClick={onFechar}>
-              <X size={18} />
-            </button>
+            <button className="rel-btn-close" onClick={onFechar}><X size={18} /></button>
           </div>
         </div>
 
-        {/* Print header (only visible on print) */}
-        <div className="print-only print-header">
+        {/* ── Cabeçalho de impressão ── */}
+        <div className="print-only rel-print-header">
           <strong>SOMMA — Relatório de Demandas</strong>
           <span>{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
         </div>
 
-        {/* Cards por status */}
-        <div className="relatorio-body">
-          {demandasPorStatus.map(({ coluna, demandas: lista }) => (
-            <div key={coluna.id} className="status-card-rel">
-              <div className="status-card-header" style={{ borderLeftColor: coluna.cor }}>
-                <div className="status-badge-rel" style={{ background: coluna.cor + '22', color: coluna.cor }}>
-                  {coluna.titulo}
-                </div>
-                <span className="status-count-rel">{lista.length} demanda{lista.length !== 1 ? 's' : ''}</span>
+        {/* ── Resumo por status ── */}
+        <div className="rel-summary no-print">
+          <div className="rel-summary-total">
+            <span className="rel-summary-num">{totalGeral}</span>
+            <span className="rel-summary-label">demanda{totalGeral !== 1 ? 's' : ''}</span>
+          </div>
+          {COLUNAS_KANBAN.map(col => {
+            const qtd = demandas.filter(d => d.status === col.id).length;
+            return (
+              <div key={col.id} className="rel-summary-chip" style={{ borderColor: col.cor + '55' }}>
+                <span className="rel-chip-dot" style={{ background: col.cor }} />
+                <span className="rel-chip-label">{col.titulo}</span>
+                <span className="rel-chip-count" style={{ color: col.cor }}>{qtd}</span>
               </div>
+            );
+          })}
+        </div>
 
-              {lista.length === 0 ? (
-                <p className="status-vazio">Nenhuma demanda neste status.</p>
-              ) : (
-                <div className="demandas-rel-lista">
-                  {lista.map((d, idx) => {
-                    const historico = getHistorico(d);
-                    return (
-                      <div key={d._id || d.id} className="demanda-rel-item">
-                        <div className="demanda-rel-numero">#{idx + 1}</div>
-                        <div className="demanda-rel-corpo">
-                          <div className="demanda-rel-row">
-                            <span className="demanda-rel-campo">Cliente</span>
-                            <span className="demanda-rel-valor">{d.nomeCliente || '—'}</span>
-                            <span className="demanda-rel-campo">CNPJ</span>
-                            <span className="demanda-rel-valor">{d.cnpj || '—'}</span>
-                          </div>
-                          <div className="demanda-rel-row">
-                            <span className="demanda-rel-campo">Marca</span>
-                            <span className="demanda-rel-valor">{d.marca || '—'}</span>
-                            <span className="demanda-rel-campo">Telefone</span>
-                            <span className="demanda-rel-valor">{d.contato || '—'}</span>
-                          </div>
-                          <div className="demanda-rel-row">
-                            <span className="demanda-rel-campo">Tipo</span>
-                            <span className="demanda-rel-valor">{TIPOS_PROBLEMA[d.tipoProblema] || d.tipoProblema}</span>
-                            <span className="demanda-rel-campo">Valor</span>
-                            <span className="demanda-rel-valor">{d.valor || '—'}</span>
-                          </div>
-                          <div className="demanda-rel-row">
-                            <span className="demanda-rel-campo">Abertura</span>
-                            <span className="demanda-rel-valor">
-                              {d.dataCriacao ? new Date(d.dataCriacao).toLocaleDateString('pt-BR') : '—'}
-                            </span>
-                            <span className="demanda-rel-campo">Cidade</span>
-                            <span className="demanda-rel-valor">{d.cidade || '—'}</span>
+        {/* ── Filtros ── */}
+        <div className="rel-filtros no-print">
+          <Filter size={14} className="rel-filtro-icon" />
+          <span className="rel-filtro-label">Filtrar por status:</span>
+          <div className="rel-filtro-pills">
+            <button
+              className={`rel-pill ${filtroStatus === 'todos' ? 'active' : ''}`}
+              onClick={() => setFiltroStatus('todos')}
+            >
+              Todos ({demandas.length})
+            </button>
+            {COLUNAS_KANBAN.map(col => {
+              const qtd = demandas.filter(d => d.status === col.id).length;
+              return (
+                <button
+                  key={col.id}
+                  className={`rel-pill ${filtroStatus === col.id ? 'active' : ''}`}
+                  style={filtroStatus === col.id ? { background: col.cor, borderColor: col.cor, color: '#fff' } : { borderColor: col.cor + '88' }}
+                  onClick={() => setFiltroStatus(col.id)}
+                >
+                  <span className="rel-pill-dot" style={{ background: filtroStatus === col.id ? '#fff' : col.cor }} />
+                  {col.titulo} ({qtd})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Conteúdo ── */}
+        <div className="rel-body">
+          {statusVisiveis.map(({ coluna, demandas: lista }) => (
+            lista.length === 0 && filtroStatus !== 'todos' ? null : (
+              <div key={coluna.id} className="rel-status-bloco">
+                {/* Cabeçalho do status */}
+                <div className="rel-status-header" style={{ borderLeftColor: coluna.cor }}>
+                  <div className="rel-status-pill" style={{ background: coluna.cor + '18', color: coluna.cor, borderColor: coluna.cor + '44' }}>
+                    <span className="rel-status-dot" style={{ background: coluna.cor }} />
+                    {coluna.titulo}
+                  </div>
+                  <span className="rel-status-count">{lista.length} demanda{lista.length !== 1 ? 's' : ''}</span>
+                </div>
+
+                {lista.length === 0 ? (
+                  <p className="rel-vazio">Nenhuma demanda neste status.</p>
+                ) : (
+                  <div className="rel-demandas">
+                    {lista.map((d, idx) => {
+                      const historico = getHistorico(d);
+                      const rawData = d.dataCriacao || d.createdAt;
+                      const abertura = rawData ? new Date(rawData).toLocaleDateString('pt-BR') : '—';
+
+                      return (
+                        <div key={d._id || d.id} className="rel-demanda-card">
+                          {/* Número */}
+                          <div className="rel-demanda-num" style={{ color: coluna.cor }}>
+                            #{String(idx + 1).padStart(2, '0')}
                           </div>
 
-                          {historico.length > 0 && (
-                            <div className="demanda-rel-historico">
-                              <span className="historico-label">Histórico</span>
-                              <div className="hist-table">
-                                <div className="hist-table-head">
+                          <div className="rel-demanda-content">
+                            {/* Linha 1: cliente em destaque */}
+                            <div className="rel-demanda-title-row">
+                              <span className="rel-demanda-nome">{d.nomeCliente}</span>
+                              {d.cnpj && <span className="rel-demanda-cnpj">{d.cnpj}</span>}
+                              {d.valor && (
+                                <span className="rel-demanda-valor">R$ {d.valor}</span>
+                              )}
+                            </div>
+
+                            {/* Grid de campos */}
+                            <div className="rel-campos-grid">
+                              <div className="rel-campo">
+                                <span className="rel-campo-label">Marca</span>
+                                <span className="rel-campo-valor">{d.marca || '—'}</span>
+                              </div>
+                              <div className="rel-campo">
+                                <span className="rel-campo-label">Representante</span>
+                                <span className="rel-campo-valor">{(d as any).representante || '—'}</span>
+                              </div>
+                              <div className="rel-campo">
+                                <span className="rel-campo-label">Contato</span>
+                                <span className="rel-campo-valor">{d.contato || '—'}</span>
+                              </div>
+                              <div className="rel-campo">
+                                <span className="rel-campo-label">Cidade</span>
+                                <span className="rel-campo-valor">{d.cidade || '—'}</span>
+                              </div>
+                              <div className="rel-campo">
+                                <span className="rel-campo-label">Nome do Contato</span>
+                                <span className="rel-campo-valor">{d.razaoSocial || '—'}</span>
+                              </div>
+                              <div className="rel-campo">
+                                <span className="rel-campo-label">Abertura</span>
+                                <span className="rel-campo-valor">{abertura}</span>
+                              </div>
+                            </div>
+
+                            {/* Histórico */}
+                            {historico.length > 0 && (
+                              <div className="rel-historico">
+                                <div className="rel-hist-head">
                                   <span>Data</span>
                                   <span>Referência</span>
                                   <span>Quant.</span>
@@ -132,327 +209,257 @@ export function Relatorio({ demandas, onFechar }: RelatorioProps) {
                                   <span>Valor</span>
                                 </div>
                                 {historico.map((h, hi) => (
-                                  <div key={h.id || hi} className="hist-table-row">
-                                    <span>{h.data || '—'}</span>
-                                    <span>{h.referencias || '—'}</span>
-                                    <span>{h.quantidade || '—'}</span>
-                                    <span className="hist-desc-col">{h.observacao || '—'}</span>
-                                    <span className="hist-val-col">{h.valor ? `R$ ${h.valor}` : '—'}</span>
+                                  <div key={h.id || hi} className="rel-hist-row">
+                                    <span className="rh-data">{h.data ? formatDate(h.data) : '—'}</span>
+                                    <span className="rh-ref">{h.referencias || '—'}</span>
+                                    <span className="rh-qty">{h.quantidade || '—'}</span>
+                                    <span className="rh-desc">{h.observacao || '—'}</span>
+                                    <span className="rh-val">{h.valor ? `R$ ${h.valor}` : '—'}</span>
                                   </div>
                                 ))}
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )
           ))}
         </div>
       </div>
 
       <style>{`
-        .relatorio-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.55);
+        .rel-overlay {
+          position: fixed; inset: 0;
+          background: rgba(0,0,0,0.6);
+          backdrop-filter: blur(6px);
           z-index: 1000;
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          padding: 24px;
-          overflow-y: auto;
+          display: flex; align-items: flex-start; justify-content: center;
+          padding: 24px; overflow-y: auto;
         }
 
-        .relatorio-container {
-          background: #fff;
+        .rel-container {
+          background: #f4f2ee;
           border-radius: 16px;
-          width: 100%;
-          max-width: 960px;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.3);
-          animation: slideInUp 0.3s ease-out;
+          width: 100%; max-width: 1020px;
+          box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+          animation: scaleIn 0.3s cubic-bezier(0.34,1.10,0.64,1);
+          overflow: hidden;
         }
 
-        .relatorio-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 24px 28px;
-          border-bottom: 1px solid #eee;
+        /* ── Header ── */
+        .rel-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 22px 28px;
+          background: linear-gradient(145deg, #0d2e58 0%, #102040 100%);
         }
-
-        .relatorio-titulo {
-          display: flex;
-          align-items: center;
-          gap: 14px;
+        .rel-header-left { display: flex; align-items: center; gap: 14px; }
+        .rel-logo {
+          width: 46px; height: 46px; border-radius: 11px; flex-shrink: 0;
+          background: linear-gradient(145deg, #c9a227, #a87820);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 1.6rem; font-weight: 800; color: #0d2e58;
+          box-shadow: 0 4px 14px rgba(201,162,39,0.4);
         }
-
-        .relatorio-logo {
-          width: 44px;
-          height: 44px;
-          background: linear-gradient(145deg, #c9a227, #b8891d);
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: #0d2e58;
-          flex-shrink: 0;
+        .rel-title {
+          font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0; letter-spacing: 0.01em;
         }
-
-        .relatorio-titulo h2 {
-          font-size: 1.15rem;
-          font-weight: 700;
-          color: #0d2e58;
-          margin: 0;
-        }
-
-        .relatorio-titulo p {
-          font-size: 0.8rem;
-          color: #888;
-          margin: 2px 0 0;
-        }
-
-        .relatorio-acoes {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .btn-print {
-          display: flex;
-          align-items: center;
-          gap: 7px;
+        .rel-date { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin: 3px 0 0; text-transform: capitalize; }
+        .rel-header-right { display: flex; align-items: center; gap: 10px; }
+        .rel-btn-print {
+          display: flex; align-items: center; gap: 7px;
           padding: 9px 18px;
-          background: #0d2e58;
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s;
+          background: linear-gradient(135deg, #c9a227, #a87820);
+          color: #0d2e58; border: none; border-radius: 8px;
+          font-size: 0.875rem; font-weight: 700; cursor: pointer;
+          box-shadow: 0 4px 12px rgba(201,162,39,0.3);
+          transition: transform 0.15s, box-shadow 0.15s;
         }
-
-        .btn-print:hover { background: #1a4a7a; }
-
-        .btn-fechar-rel {
-          width: 36px;
-          height: 36px;
-          border: none;
-          background: #f5f5f5;
-          border-radius: 8px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #666;
-          transition: background 0.2s;
+        .rel-btn-print:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(201,162,39,0.4); }
+        .rel-btn-close {
+          width: 36px; height: 36px; border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.08); border-radius: 8px;
+          cursor: pointer; display: flex; align-items: center; justify-content: center;
+          color: rgba(255,255,255,0.7); transition: background 0.15s;
         }
+        .rel-btn-close:hover { background: rgba(255,255,255,0.18); color: #fff; }
 
-        .btn-fechar-rel:hover { background: #e8e8e8; }
-
-        .relatorio-body {
-          padding: 24px 28px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
+        /* ── Resumo ── */
+        .rel-summary {
+          display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+          padding: 14px 28px;
+          background: #fff;
+          border-bottom: 1px solid #e8e3da;
+          overflow-x: auto;
         }
+        .rel-summary-total {
+          display: flex; flex-direction: column; align-items: center;
+          padding: 6px 16px; border-radius: 10px;
+          background: #0d2e58; color: #fff; flex-shrink: 0;
+          margin-right: 6px;
+        }
+        .rel-summary-num { font-size: 1.4rem; font-weight: 800; line-height: 1; }
+        .rel-summary-label { font-size: 0.65rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.06em; }
+        .rel-summary-chip {
+          display: flex; align-items: center; gap: 5px;
+          padding: 5px 12px; border-radius: 99px;
+          border: 1.5px solid; background: #fff;
+          white-space: nowrap; flex-shrink: 0;
+        }
+        .rel-chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .rel-chip-label { font-size: 0.72rem; color: #555; font-weight: 500; }
+        .rel-chip-count { font-size: 0.8rem; font-weight: 800; }
 
-        .status-card-rel {
-          border: 1px solid #e8e8e8;
+        /* ── Filtros ── */
+        .rel-filtros {
+          display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap;
+          padding: 14px 28px 12px;
+          background: #faf8f4;
+          border-bottom: 1px solid #e8e3da;
+        }
+        .rel-filtro-icon { color: #888; margin-top: 2px; flex-shrink: 0; }
+        .rel-filtro-label {
+          font-size: 0.78rem; font-weight: 600; color: #666;
+          white-space: nowrap; padding-top: 2px; flex-shrink: 0;
+        }
+        .rel-filtro-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+        .rel-pill {
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 5px 13px; border-radius: 99px;
+          border: 1.5px solid #ccc; background: #fff;
+          font-size: 0.72rem; font-weight: 600; color: #555;
+          cursor: pointer; transition: all 0.15s;
+        }
+        .rel-pill:hover { border-color: #0d2e58; color: #0d2e58; }
+        .rel-pill.active { background: #0d2e58; border-color: #0d2e58; color: #fff; }
+        .rel-pill-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ── Corpo ── */
+        .rel-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+        /* ── Bloco por status ── */
+        .rel-status-bloco {
+          background: #fff;
           border-radius: 12px;
           overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .rel-status-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 14px 20px;
+          border-left: 5px solid;
+          background: #fafaf8;
+          border-bottom: 1px solid #f0ece4;
+        }
+        .rel-status-pill {
+          display: inline-flex; align-items: center; gap: 7px;
+          padding: 6px 15px; border-radius: 99px;
+          border: 1.5px solid;
+          font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em;
+        }
+        .rel-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .rel-status-count { font-size: 0.78rem; color: #999; font-weight: 500; }
+        .rel-vazio { padding: 18px 20px; color: #bbb; font-size: 0.85rem; font-style: italic; margin: 0; }
+
+        /* ── Cards de demanda ── */
+        .rel-demandas { display: flex; flex-direction: column; }
+        .rel-demanda-card {
+          display: flex; gap: 0;
+          border-bottom: 1px solid #f0ece4;
+        }
+        .rel-demanda-card:last-child { border-bottom: none; }
+        .rel-demanda-num {
+          padding: 16px 14px;
+          font-size: 0.75rem; font-weight: 800;
+          min-width: 52px;
+          border-right: 1px solid #f0ece4;
+          display: flex; align-items: flex-start; justify-content: center;
+          padding-top: 18px;
+        }
+        .rel-demanda-content { flex: 1; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+
+        /* Linha do título */
+        .rel-demanda-title-row {
+          display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .rel-demanda-nome {
+          font-size: 1rem; font-weight: 700; color: #0d2e58;
+        }
+        .rel-demanda-cnpj {
+          font-size: 0.78rem; color: #888;
+          background: #f0ece4; padding: 2px 9px; border-radius: 6px;
+        }
+        .rel-demanda-valor {
+          margin-left: auto;
+          font-size: 0.95rem; font-weight: 800; color: #15803d;
+          background: #dcfce7; padding: 3px 12px; border-radius: 99px;
         }
 
-        .status-card-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 14px 18px;
-          background: #fafafa;
-          border-left: 4px solid;
-          border-bottom: 1px solid #eee;
+        /* Grid de campos */
+        .rel-campos-grid {
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 16px;
         }
+        .rel-campo { display: flex; flex-direction: column; gap: 2px; }
+        .rel-campo-label {
+          font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.06em; color: #aaa;
+        }
+        .rel-campo-valor { font-size: 0.82rem; color: #333; font-weight: 500; }
 
-        .status-badge-rel {
-          padding: 5px 14px;
-          border-radius: 20px;
-          font-size: 0.8125rem;
-          font-weight: 700;
-          letter-spacing: 0.02em;
+        /* Histórico tabela */
+        .rel-historico {
+          border: 1px solid #e8e3da; border-radius: 8px; overflow: hidden; margin-top: 4px;
         }
-
-        .status-count-rel {
-          font-size: 0.8125rem;
-          color: #888;
-          font-weight: 500;
-        }
-
-        .status-vazio {
-          padding: 16px 18px;
-          color: #aaa;
-          font-size: 0.85rem;
-          font-style: italic;
-          margin: 0;
-        }
-
-        .demandas-rel-lista {
-          display: flex;
-          flex-direction: column;
-          gap: 0;
-        }
-
-        .demanda-rel-item {
-          display: flex;
-          gap: 0;
-          border-bottom: 1px solid #f0f0f0;
-        }
-
-        .demanda-rel-item:last-child {
-          border-bottom: none;
-        }
-
-        .demanda-rel-numero {
-          padding: 14px 12px;
-          font-size: 0.75rem;
-          color: #bbb;
-          font-weight: 600;
-          min-width: 40px;
-          border-right: 1px solid #f0f0f0;
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          padding-top: 16px;
-        }
-
-        .demanda-rel-corpo {
-          flex: 1;
-          padding: 12px 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .demanda-rel-row {
-          display: grid;
-          grid-template-columns: 70px 1fr 70px 1fr;
-          gap: 4px 12px;
-          align-items: baseline;
-        }
-
-        .demanda-rel-campo {
-          font-size: 0.72rem;
-          font-weight: 600;
-          color: #999;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-
-        .demanda-rel-valor {
-          font-size: 0.875rem;
-          color: #1a1a1a;
-          font-weight: 500;
-        }
-
-        .demanda-rel-historico {
-          margin-top: 8px;
-          padding-top: 8px;
-          border-top: 1px dashed #eee;
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-        }
-
-        .historico-label {
-          font-size: 0.72rem;
-          font-weight: 700;
-          color: #999;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 4px;
-        }
-
-        /* Tabela de histórico no relatório */
-        .hist-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.78rem;
-          border: 1px solid #e8e8e8;
-          border-radius: 6px;
-          overflow: hidden;
-        }
-        .hist-table-head,
-        .hist-table-row {
+        .rel-hist-head,
+        .rel-hist-row {
           display: grid;
           grid-template-columns: 90px 110px 60px 1fr 90px;
-          gap: 0;
         }
-        .hist-table-head {
-          background: #f0f4f8;
-          font-weight: 700;
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: #666;
+        .rel-hist-head {
+          background: #f0ece4;
+          font-size: 0.66rem; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.05em; color: #888;
         }
-        .hist-table-head span,
-        .hist-table-row span {
-          padding: 5px 8px;
-          border-right: 1px solid #e8e8e8;
+        .rel-hist-head span,
+        .rel-hist-row span {
+          padding: 6px 10px;
+          border-right: 1px solid #e8e3da;
         }
-        .hist-table-head span:last-child,
-        .hist-table-row span:last-child { border-right: none; }
-        .hist-table-row {
-          border-top: 1px solid #e8e8e8;
-          color: #333;
+        .rel-hist-head span:last-child,
+        .rel-hist-row span:last-child { border-right: none; }
+        .rel-hist-row {
+          border-top: 1px solid #e8e3da;
+          font-size: 0.8rem; color: #333;
         }
-        .hist-table-row:nth-child(even) { background: #fafafa; }
-        .hist-val-col { color: #065f46; font-weight: 600; text-align: right; }
-        .hist-desc-col { color: #444; }
+        .rel-hist-row:nth-child(even) { background: #fafaf8; }
+        .rh-data { color: #1a56db !important; font-weight: 600 !important; }
+        .rh-ref  { color: #7c3aed !important; font-weight: 600 !important; }
+        .rh-qty  { color: #92400e !important; font-weight: 600 !important; text-align: center; }
+        .rh-val  { color: #15803d !important; font-weight: 700 !important; text-align: right; }
 
         /* Print */
         .print-only { display: none; }
 
         @media print {
-          .relatorio-overlay {
-            position: static;
-            background: none;
-            padding: 0;
-            display: block;
-          }
-
-          .relatorio-container {
-            box-shadow: none;
-            border-radius: 0;
-            max-width: 100%;
-          }
-
+          .rel-overlay { position: static; background: none; padding: 0; display: block; }
+          .rel-container { box-shadow: none; border-radius: 0; max-width: 100%; background: #fff; }
           .no-print { display: none !important; }
-
           .print-only { display: flex !important; }
-
-          .print-header {
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 2px solid #0d2e58;
-            margin-bottom: 16px;
-            font-size: 1rem;
-            color: #0d2e58;
+          .rel-print-header {
+            justify-content: space-between; padding: 12px 0;
+            border-bottom: 2px solid #0d2e58; margin-bottom: 16px;
+            font-size: 1rem; color: #0d2e58;
           }
+          .rel-body { padding: 0; }
+          .rel-status-bloco { break-inside: avoid; page-break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+        }
 
-          .relatorio-body {
-            padding: 0;
-          }
-
-          .status-card-rel {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
+        @media (max-width: 640px) {
+          .rel-campos-grid { grid-template-columns: repeat(2, 1fr); }
+          .rel-hist-head, .rel-hist-row { grid-template-columns: 80px 90px 50px 1fr 80px; }
         }
       `}</style>
     </div>
