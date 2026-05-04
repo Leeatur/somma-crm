@@ -8,6 +8,7 @@ interface EntradaHistorico {
   referencias: string;
   observacao: string;
   valor: string;
+  quantidade?: string;
 }
 
 interface FicharioDemandaProps {
@@ -38,8 +39,9 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: Fich
     : parseHistorico(demanda.observacoes);
 
   const statusCor = CORES_STATUS[demanda.status];
-  const dataCriacao = demanda.dataCriacao
-    ? new Date(demanda.dataCriacao).toLocaleDateString('pt-BR')
+  const rawData = demanda.dataCriacao || demanda.createdAt || demanda.updatedAt;
+  const dataCriacao = rawData
+    ? new Date(rawData).toLocaleDateString('pt-BR')
     : '—';
 
   return (
@@ -139,31 +141,32 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: Fich
             {historico.length === 0 ? (
               <div className="fich-hist-vazio">Nenhuma observação registrada.</div>
             ) : (
-              <div className="fich-timeline">
-                {historico.map((entrada, idx) => (
-                  <div key={entrada.id} className="fich-timeline-item">
-                    <div className="fich-timeline-dot" />
-                    {idx < historico.length - 1 && <div className="fich-timeline-line" />}
-                    <div className="fich-timeline-card">
-                      <div className="fich-timeline-meta">
-                        {entrada.data && (
-                          <span className="fich-meta-tag fich-meta-data">
-                            <CalendarDays size={12} />{formatDate(entrada.data)}
-                          </span>
-                        )}
-                        {entrada.referencias && (
-                          <span className="fich-meta-tag fich-meta-ref">
-                            <Tag size={12} />{entrada.referencias}
-                          </span>
-                        )}
-                        {entrada.valor && (
-                          <span className="fich-meta-tag fich-meta-valor">
-                            <DollarSign size={12} />R$ {entrada.valor}
-                          </span>
-                        )}
-                      </div>
-                      {entrada.observacao && <p className="fich-timeline-obs">{entrada.observacao}</p>}
-                    </div>
+              <div className="fich-hist-lista">
+                {historico.map(entrada => (
+                  <div key={entrada.id} className="fich-hist-line">
+                    {entrada.data && (
+                      <span className="fich-meta-tag fich-meta-data">
+                        <CalendarDays size={11} />{formatDate(entrada.data)}
+                      </span>
+                    )}
+                    {entrada.referencias && (
+                      <span className="fich-meta-tag fich-meta-ref">
+                        <Tag size={11} />{entrada.referencias}
+                      </span>
+                    )}
+                    {entrada.quantidade && (
+                      <span className="fich-meta-tag fich-meta-qty">
+                        <Hash size={11} />{entrada.quantidade}
+                      </span>
+                    )}
+                    {entrada.valor && (
+                      <span className="fich-meta-tag fich-meta-valor">
+                        <DollarSign size={11} />R$ {entrada.valor}
+                      </span>
+                    )}
+                    {entrada.observacao && (
+                      <span className="fich-hist-desc">{entrada.observacao}</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -292,38 +295,29 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: Fich
         }
         .fich-field-value { font-size: 0.9375rem; color: var(--color-text); font-weight: 500; }
 
-        /* ── Timeline ── */
-        .fich-timeline { display: flex; flex-direction: column; gap: 0; }
-        .fich-timeline-item { display: flex; gap: 14px; position: relative; }
-        .fich-timeline-dot {
-          flex-shrink: 0; width: 12px; height: 12px; border-radius: 50%;
-          background: var(--color-gold); border: 2px solid var(--color-white);
-          box-shadow: 0 0 0 2px var(--color-gold);
-          margin-top: 4px; position: relative; z-index: 1;
-        }
-        .fich-timeline-line {
-          position: absolute; left: 5px; top: 16px; bottom: -16px;
-          width: 2px; background: var(--color-border-light);
-        }
-        .fich-timeline-card {
-          flex: 1; background: var(--color-cream, #fafaf8);
-          border: 1.5px solid var(--color-border); border-radius: var(--radius-md);
-          padding: 12px 14px; margin-bottom: 16px;
+        /* ── Histórico linha única ── */
+        .fich-hist-lista { display: flex; flex-direction: column; gap: 6px; }
+        .fich-hist-line {
+          display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+          background: var(--color-cream, #fafaf8); border: 1px solid var(--color-border);
+          border-radius: var(--radius-md); padding: 7px 12px;
           transition: var(--transition-smooth);
         }
-        .fich-timeline-card:hover { border-color: var(--color-gold); box-shadow: 0 2px 10px rgba(201,162,39,0.1); }
-        .fich-timeline-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .fich-hist-line:hover { border-color: var(--color-gold); box-shadow: 0 2px 8px rgba(201,162,39,0.1); }
+        .fich-hist-desc {
+          flex: 1; min-width: 80px;
+          font-size: 0.8125rem; color: var(--color-text);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         .fich-meta-tag {
-          display: inline-flex; align-items: center; gap: 4px;
+          display: inline-flex; align-items: center; gap: 3px;
           padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 600;
+          white-space: nowrap; flex-shrink: 0;
         }
         .fich-meta-data  { background: #e0f2fe; color: #0369a1; }
         .fich-meta-ref   { background: #f3e8ff; color: #7c3aed; }
+        .fich-meta-qty   { background: #fef3c7; color: #92400e; }
         .fich-meta-valor { background: #dcfce7; color: #15803d; }
-        .fich-timeline-obs {
-          font-size: 0.875rem; color: var(--color-text); line-height: 1.6;
-          margin: 0; white-space: pre-wrap;
-        }
 
         .fich-hist-vazio {
           text-align: center; padding: 32px 20px;

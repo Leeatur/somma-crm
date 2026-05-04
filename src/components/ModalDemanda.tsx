@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Demanda } from '../types';
 import { STATUS_SITUACAO } from '../types';
-import { X, User, Building2, Phone, DollarSign, Package, CheckCircle2, Plus, Trash2, CalendarDays, Tag, FileText, MapPin } from 'lucide-react';
+import { X, User, Building2, Phone, DollarSign, Package, CheckCircle2, Plus, Trash2, CalendarDays, Tag, FileText, MapPin, Hash } from 'lucide-react';
 
 interface EntradaHistorico {
   id: string;
@@ -9,6 +9,7 @@ interface EntradaHistorico {
   referencias: string;
   observacao: string;
   valor: string;
+  quantidade?: string;
 }
 
 interface ModalDemandaProps {
@@ -24,6 +25,7 @@ const entradaVazia = (): EntradaHistorico => ({
   referencias: '',
   observacao: '',
   valor: '',
+  quantidade: '',
 });
 
 function parseHistorico(obs: string | undefined): EntradaHistorico[] {
@@ -278,7 +280,7 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
 
             {adicionando && (
               <div className="entrada-form">
-                <div className="entrada-form-grid entrada-form-grid--4">
+                <div className="entrada-form-grid entrada-form-grid--5">
                   <div className="form-group">
                     <label><CalendarDays size={14} />Data</label>
                     <input
@@ -294,6 +296,16 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
                       value={novaEntrada.referencias}
                       onChange={e => setNovaEntrada(prev => ({ ...prev, referencias: e.target.value }))}
                       placeholder="NF, Pedido..."
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label><Hash size={14} />Quant.</label>
+                    <input
+                      type="text"
+                      value={novaEntrada.quantidade || ''}
+                      onChange={e => setNovaEntrada(prev => ({ ...prev, quantidade: e.target.value.replace(/[^\d]/g, '') }))}
+                      placeholder="0"
+                      inputMode="numeric"
                     />
                   </div>
                   <div className="form-group">
@@ -331,24 +343,25 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
             {historico.length > 0 ? (
               <div className="historico-lista">
                 {historico.map(entrada => (
-                  <div key={entrada.id} className="historico-card">
-                    <div className="historico-card-header">
-                      <div className="historico-meta">
-                        {entrada.data && (
-                          <span className="meta-tag meta-data"><CalendarDays size={13} />{formatDate(entrada.data)}</span>
-                        )}
-                        {entrada.referencias && (
-                          <span className="meta-tag meta-ref"><Tag size={13} />{entrada.referencias}</span>
-                        )}
-                        {entrada.valor && (
-                          <span className="meta-tag meta-valor"><DollarSign size={13} />R$ {entrada.valor}</span>
-                        )}
-                      </div>
-                      <button type="button" className="btn-remover" onClick={() => removerEntrada(entrada.id)} title="Remover">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                    {entrada.observacao && <p className="historico-obs"><strong>Descrição:</strong> {entrada.observacao}</p>}
+                  <div key={entrada.id} className="hist-line">
+                    {entrada.data && (
+                      <span className="meta-tag meta-data"><CalendarDays size={11} />{formatDate(entrada.data)}</span>
+                    )}
+                    {entrada.referencias && (
+                      <span className="meta-tag meta-ref"><Tag size={11} />{entrada.referencias}</span>
+                    )}
+                    {entrada.quantidade && (
+                      <span className="meta-tag meta-qty"><Hash size={11} />{entrada.quantidade}</span>
+                    )}
+                    {entrada.valor && (
+                      <span className="meta-tag meta-valor"><DollarSign size={11} />R$ {entrada.valor}</span>
+                    )}
+                    {entrada.observacao && (
+                      <span className="hist-line-desc">{entrada.observacao}</span>
+                    )}
+                    <button type="button" className="btn-remover" onClick={() => removerEntrada(entrada.id)} title="Remover">
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -480,32 +493,40 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
           background: #f8faff; border: 1.5px solid var(--color-border);
           border-radius: var(--radius-md); padding: 18px; margin-bottom: 14px;
         }
-        .entrada-form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
-        .entrada-form-grid--4 { grid-template-columns: 140px 1fr 1fr 120px; }
+        .entrada-form-grid { display: grid; gap: 12px; margin-bottom: 12px; }
+        .entrada-form-grid--5 { grid-template-columns: 130px 1fr 80px 1fr 110px; }
         .entrada-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 
-        .historico-lista { display: flex; flex-direction: column; gap: 10px; }
-        .historico-card {
-          background: var(--color-cream, #fafaf8); border: 1.5px solid var(--color-border);
-          border-radius: var(--radius-md); padding: 14px 16px; transition: var(--transition-smooth);
+        .historico-lista { display: flex; flex-direction: column; gap: 6px; }
+
+        /* Linha única por entrada */
+        .hist-line {
+          display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+          background: var(--color-cream, #fafaf8); border: 1px solid var(--color-border);
+          border-radius: var(--radius-md); padding: 7px 10px;
+          transition: var(--transition-smooth);
         }
-        .historico-card:hover { border-color: var(--color-gold); box-shadow: 0 2px 10px rgba(201,162,39,0.12); }
-        .historico-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        .historico-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .hist-line:hover { border-color: var(--color-gold); box-shadow: 0 2px 8px rgba(201,162,39,0.1); }
+        .hist-line-desc {
+          flex: 1; min-width: 80px;
+          font-size: 0.8125rem; color: var(--color-text);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         .meta-tag {
-          display: inline-flex; align-items: center; gap: 4px;
-          padding: 3px 9px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;
+          display: inline-flex; align-items: center; gap: 3px;
+          padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 600;
+          white-space: nowrap; flex-shrink: 0;
         }
-        .meta-data { background: #e0f2fe; color: #0369a1; }
-        .meta-ref  { background: #f3e8ff; color: #7c3aed; }
+        .meta-data  { background: #e0f2fe; color: #0369a1; }
+        .meta-ref   { background: #f3e8ff; color: #7c3aed; }
+        .meta-qty   { background: #fef3c7; color: #92400e; }
         .meta-valor { background: #dcfce7; color: #15803d; }
         .btn-remover {
           background: none; border: none; color: var(--color-text-muted, #9ca3af);
           cursor: pointer; padding: 4px; border-radius: var(--radius-sm);
-          display: flex; transition: var(--transition-fast);
+          display: flex; transition: var(--transition-fast); margin-left: auto; flex-shrink: 0;
         }
         .btn-remover:hover { color: #ef4444; background: #fee2e2; }
-        .historico-obs { font-size: 0.9rem; color: var(--color-text); line-height: 1.55; margin: 0; white-space: pre-wrap; }
         .historico-vazio {
           text-align: center; padding: 24px; color: var(--color-text-muted, #9ca3af);
           font-size: 0.875rem; background: var(--color-cream, #fafaf8);
