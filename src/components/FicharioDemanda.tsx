@@ -93,6 +93,12 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: Fich
                 <span className="fich-field-label"><Building2 size={13} />CNPJ</span>
                 <span className="fich-field-value">{demanda.cnpj || '—'}</span>
               </div>
+              {demanda.razaoSocial && (
+                <div className="fich-field">
+                  <span className="fich-field-label"><User size={13} />Nome do Contato</span>
+                  <span className="fich-field-value">{demanda.razaoSocial}</span>
+                </div>
+              )}
               <div className="fich-field">
                 <span className="fich-field-label"><Phone size={13} />Contato</span>
                 <span className="fich-field-value">{demanda.contato || '—'}</span>
@@ -156,7 +162,7 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: Fich
                           </span>
                         )}
                       </div>
-                      <p className="fich-timeline-obs">{entrada.observacao}</p>
+                      {entrada.observacao && <p className="fich-timeline-obs">{entrada.observacao}</p>}
                     </div>
                   </div>
                 ))}

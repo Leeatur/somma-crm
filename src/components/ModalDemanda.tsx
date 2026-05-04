@@ -42,6 +42,7 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
     status: demanda?.status || 'aguardando_retorno_fabrica',
     contato: demanda?.contato || '',
     cidade: demanda?.cidade || '',
+    razaoSocial: demanda?.razaoSocial || '',
     representante: demanda?.representante || '',
     marca: demanda?.marca || '',
     valor: demanda?.valor || '',
@@ -215,6 +216,16 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
             </div>
 
             <div className="form-group">
+              <label><User size={16} />Nome do Contato</label>
+              <input
+                type="text"
+                value={formData.razaoSocial}
+                onChange={e => setFormData(prev => ({ ...prev, razaoSocial: e.target.value }))}
+                placeholder="Nome da pessoa de contato"
+              />
+            </div>
+
+            <div className="form-group">
               <label><Building2 size={16} />Marca *</label>
               <input
                 type="text"
@@ -267,7 +278,7 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
 
             {adicionando && (
               <div className="entrada-form">
-                <div className="entrada-form-grid">
+                <div className="entrada-form-grid entrada-form-grid--4">
                   <div className="form-group">
                     <label><CalendarDays size={14} />Data</label>
                     <input
@@ -277,12 +288,21 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
                     />
                   </div>
                   <div className="form-group">
-                    <label><Tag size={14} />Referências</label>
+                    <label><Tag size={14} />Referência</label>
                     <input
                       type="text"
                       value={novaEntrada.referencias}
                       onChange={e => setNovaEntrada(prev => ({ ...prev, referencias: e.target.value }))}
-                      placeholder="Ex: NF 1234, Pedido 567..."
+                      placeholder="NF, Pedido..."
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label><FileText size={14} />Descrição *</label>
+                    <input
+                      type="text"
+                      value={novaEntrada.observacao}
+                      onChange={e => setNovaEntrada(prev => ({ ...prev, observacao: e.target.value }))}
+                      placeholder="Descrição da entrada"
                     />
                   </div>
                   <div className="form-group">
@@ -295,15 +315,6 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
                       inputMode="decimal"
                     />
                   </div>
-                </div>
-                <div className="form-group">
-                  <label><FileText size={14} />Observação *</label>
-                  <textarea
-                    value={novaEntrada.observacao}
-                    onChange={e => setNovaEntrada(prev => ({ ...prev, observacao: e.target.value }))}
-                    placeholder="Descreva a observação..."
-                    rows={3}
-                  />
                 </div>
                 <div className="entrada-form-actions">
                   <button type="button" className="btn-secondary" onClick={() => { setAdicionando(false); setNovaEntrada(entradaVazia()); }}>
@@ -337,7 +348,7 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
                         <Trash2 size={14} />
                       </button>
                     </div>
-                    <p className="historico-obs">{entrada.observacao}</p>
+                    {entrada.observacao && <p className="historico-obs"><strong>Descrição:</strong> {entrada.observacao}</p>}
                   </div>
                 ))}
               </div>
@@ -469,7 +480,8 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
           background: #f8faff; border: 1.5px solid var(--color-border);
           border-radius: var(--radius-md); padding: 18px; margin-bottom: 14px;
         }
-        .entrada-form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+        .entrada-form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+        .entrada-form-grid--4 { grid-template-columns: 140px 1fr 1fr 120px; }
         .entrada-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 
         .historico-lista { display: flex; flex-direction: column; gap: 10px; }
