@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Demanda } from '../types';
 import { STATUS_SITUACAO } from '../types';
 import { X, User, Building2, Phone, DollarSign, Package, CheckCircle2, Plus, Trash2, CalendarDays, Tag, FileText, MapPin, Hash } from 'lucide-react';
@@ -63,15 +63,18 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
 
   const historico = (formData.historicoObservacoes as EntradaHistorico[]) || [];
 
-  // Soma automática dos valores do histórico
-  const somaHistorico = historico.reduce((acc, e) => {
-    const v = parseFloat(e.valor?.replace(',', '.') || '0');
-    return acc + (isNaN(v) ? 0 : v);
-  }, 0);
-
-  const somaFormatada = somaHistorico > 0
-    ? somaHistorico.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : null;
+  // Soma automática dos valores do histórico → atualiza Valor Total em tempo real
+  useEffect(() => {
+    const soma = historico.reduce((acc, e) => {
+      const v = parseFloat(e.valor?.replace(',', '.') || '0');
+      return acc + (isNaN(v) ? 0 : v);
+    }, 0);
+    if (soma > 0) {
+      const formatado = soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      setFormData(prev => ({ ...prev, valor: formatado }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.historicoObservacoes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,29 +243,13 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
 
             <div className="form-group">
               <label><DollarSign size={16} />Valor Total</label>
-              <div className="valor-wrap">
-                <input
-                  type="text"
-                  value={formData.valor}
-                  onChange={e => setFormData(prev => ({ ...prev, valor: e.target.value.replace(/[^\d,]/g, '') }))}
-                  placeholder="0,00"
-                  inputMode="decimal"
-                  className={somaFormatada ? 'valor-com-soma' : ''}
-                />
-                {somaFormatada && (
-                  <div className="valor-soma-hint">
-                    <DollarSign size={12} />
-                    Soma do histórico: <strong>R$ {somaFormatada}</strong>
-                    <button
-                      type="button"
-                      className="btn-usar-soma"
-                      onClick={() => setFormData(prev => ({ ...prev, valor: somaFormatada }))}
-                    >
-                      Usar
-                    </button>
-                  </div>
-                )}
-              </div>
+              <input
+                type="text"
+                value={formData.valor || ''}
+                onChange={e => setFormData(prev => ({ ...prev, valor: e.target.value.replace(/[^\d,]/g, '') }))}
+                placeholder="Calculado pelo histórico"
+                inputMode="decimal"
+              />
             </div>
           </div>
 
@@ -448,28 +435,6 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
         }
         .form-group input::placeholder, .form-group textarea::placeholder { color: var(--color-text-muted); }
 
-        /* Valor com soma */
-        .valor-wrap { display: flex; flex-direction: column; gap: 6px; }
-        .valor-com-soma { border-color: var(--color-gold) !important; }
-        .valor-soma-hint {
-          display: flex; align-items: center; gap: 5px;
-          font-size: 0.75rem; color: #15803d;
-          background: #dcfce7; border-radius: var(--radius-sm);
-          padding: 5px 10px;
-        }
-        .btn-usar-soma {
-          margin-left: auto;
-          padding: 2px 10px;
-          background: #15803d;
-          color: white;
-          border: none;
-          border-radius: 99px;
-          font-size: 0.7rem;
-          font-weight: 700;
-          cursor: pointer;
-        }
-        .btn-usar-soma:hover { background: #166534; }
-
         /* Histórico */
         .historico-section { margin-bottom: 20px; }
         .historico-header {
@@ -491,10 +456,17 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
 
         .entrada-form {
           background: #f8faff; border: 1.5px solid var(--color-border);
-          border-radius: var(--radius-md); padding: 18px; margin-bottom: 14px;
+          border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px;
         }
-        .entrada-form-grid { display: grid; gap: 12px; margin-bottom: 12px; }
-        .entrada-form-grid--5 { grid-template-columns: 130px 1fr 80px 1fr 110px; }
+        .entrada-form-grid { display: grid; gap: 8px; margin-bottom: 10px; }
+        .entrada-form-grid--5 { grid-template-columns: 120px 1fr 72px 1fr 100px; }
+
+        /* Inputs compactos dentro do form de nova entrada */
+        .entrada-form .form-group label { font-size: 0.72rem; gap: 4px; }
+        .entrada-form .form-group input {
+          padding: 7px 9px;
+          font-size: 0.8125rem;
+        }
         .entrada-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 
         .historico-lista { display: flex; flex-direction: column; gap: 6px; }

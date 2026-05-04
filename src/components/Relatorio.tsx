@@ -14,6 +14,7 @@ interface EntradaHistorico {
   referencias: string;
   observacao: string;
   valor: string;
+  quantidade?: string;
 }
 
 function parseHistorico(obs: string | undefined): EntradaHistorico[] {
@@ -122,14 +123,24 @@ export function Relatorio({ demandas, onFechar }: RelatorioProps) {
                           {historico.length > 0 && (
                             <div className="demanda-rel-historico">
                               <span className="historico-label">Histórico</span>
-                              {historico.map((h, hi) => (
-                                <div key={h.id || hi} className="historico-entry-rel">
-                                  <span className="hist-data">{h.data}</span>
-                                  {h.referencias && <span className="hist-ref">{h.referencias}</span>}
-                                  {h.valor && <span className="hist-val">{h.valor}</span>}
-                                  {h.observacao && <span className="hist-obs">{h.observacao}</span>}
+                              <div className="hist-table">
+                                <div className="hist-table-head">
+                                  <span>Data</span>
+                                  <span>Referência</span>
+                                  <span>Quant.</span>
+                                  <span>Descrição</span>
+                                  <span>Valor</span>
                                 </div>
-                              ))}
+                                {historico.map((h, hi) => (
+                                  <div key={h.id || hi} className="hist-table-row">
+                                    <span>{h.data || '—'}</span>
+                                    <span>{h.referencias || '—'}</span>
+                                    <span>{h.quantidade || '—'}</span>
+                                    <span className="hist-desc-col">{h.observacao || '—'}</span>
+                                    <span className="hist-val-col">{h.valor ? `R$ ${h.valor}` : '—'}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -366,45 +377,43 @@ export function Relatorio({ demandas, onFechar }: RelatorioProps) {
           margin-bottom: 4px;
         }
 
-        .historico-entry-rel {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          align-items: center;
-          font-size: 0.8125rem;
+        /* Tabela de histórico no relatório */
+        .hist-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.78rem;
+          border: 1px solid #e8e8e8;
+          border-radius: 6px;
+          overflow: hidden;
         }
-
-        .hist-data {
-          background: #e8f0fe;
-          color: #1a56db;
-          padding: 2px 8px;
-          border-radius: 10px;
-          font-size: 0.75rem;
-          font-weight: 600;
+        .hist-table-head,
+        .hist-table-row {
+          display: grid;
+          grid-template-columns: 90px 110px 60px 1fr 90px;
+          gap: 0;
         }
-
-        .hist-ref {
-          background: #f3e8ff;
-          color: #7c3aed;
-          padding: 2px 8px;
-          border-radius: 10px;
-          font-size: 0.75rem;
-          font-weight: 600;
+        .hist-table-head {
+          background: #f0f4f8;
+          font-weight: 700;
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          color: #666;
         }
-
-        .hist-val {
-          background: #d1fae5;
-          color: #065f46;
-          padding: 2px 8px;
-          border-radius: 10px;
-          font-size: 0.75rem;
-          font-weight: 600;
+        .hist-table-head span,
+        .hist-table-row span {
+          padding: 5px 8px;
+          border-right: 1px solid #e8e8e8;
         }
-
-        .hist-obs {
-          color: #444;
-          font-size: 0.8125rem;
+        .hist-table-head span:last-child,
+        .hist-table-row span:last-child { border-right: none; }
+        .hist-table-row {
+          border-top: 1px solid #e8e8e8;
+          color: #333;
         }
+        .hist-table-row:nth-child(even) { background: #fafafa; }
+        .hist-val-col { color: #065f46; font-weight: 600; text-align: right; }
+        .hist-desc-col { color: #444; }
 
         /* Print */
         .print-only { display: none; }
