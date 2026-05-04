@@ -115,9 +115,22 @@ function buildPrintHtml(
   <title>Relatório de Demandas — SOMMA</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#fff; color:#1a1a1a; padding:16px; font-size:8pt; }
-    @page { margin: 20mm 10mm 10mm 20mm; }
-    @media print { body { padding: 0; } }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#fff; color:#1a1a1a; padding: 20mm 10mm 10mm 20mm; font-size:8pt; }
+    @page {
+      margin-top: 20mm;
+      margin-left: 20mm;
+      margin-bottom: 10mm;
+      margin-right: 10mm;
+    }
+    @media print {
+      body {
+        padding: 0;
+        margin-top: 20mm;
+        margin-left: 20mm;
+        margin-bottom: 10mm;
+        margin-right: 10mm;
+      }
+    }
     td, th { font-family: inherit; }
     table { border-collapse: collapse; }
   </style>
