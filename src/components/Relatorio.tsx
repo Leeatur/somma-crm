@@ -116,7 +116,7 @@ function buildPrintHtml(
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#fff; color:#1a1a1a; padding:16px; font-size:8pt; }
-    @page { margin: 12mm 10mm; }
+    @page { margin: 20mm 10mm 10mm 20mm; }
     @media print { body { padding: 0; } }
     td, th { font-family: inherit; }
     table { border-collapse: collapse; }
