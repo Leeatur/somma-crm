@@ -161,8 +161,6 @@ function App() {
           <KanbanBoard
             demandas={demandasFiltradas}
             onMoverDemanda={moverDemanda}
-            onEditar={handleEditar}
-            onExcluir={excluirDemanda}
             onVerFichario={handleVerFichario}
           />
         ) : (
@@ -188,6 +186,8 @@ function App() {
         <FicharioDemanda
           demanda={demandaFichario}
           onFechar={() => setDemandaFichario(null)}
+          onEditar={handleEditar}
+          onExcluir={excluirDemanda}
         />
       )}
 

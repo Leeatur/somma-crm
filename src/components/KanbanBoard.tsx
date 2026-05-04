@@ -4,27 +4,21 @@ import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { Demanda } from '../types';
 import { COLUNAS_KANBAN, CORES_PRIORIDADE } from '../types';
-import { Clock, MoreVertical, Edit2, Trash2, GripVertical, FolderOpen, Building2, User } from 'lucide-react';
+import { Clock, GripVertical, Building2, User } from 'lucide-react';
 
 interface KanbanBoardProps {
   demandas: Demanda[];
   onMoverDemanda: (id: string, novoStatus: Demanda['status']) => void;
-  onEditar: (demanda: Demanda) => void;
-  onExcluir: (id: string) => void;
   onVerFichario: (demanda: Demanda) => void;
 }
 
 interface KanbanCardProps {
   demanda: Demanda;
-  onEditar: (demanda: Demanda) => void;
-  onExcluir: (id: string) => void;
   onVerFichario: (demanda: Demanda) => void;
   isOverlay?: boolean;
 }
 
-function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = false }: KanbanCardProps) {
-  const [showMenu, setShowMenu] = useState(false);
-
+function KanbanCard({ demanda, onVerFichario, isOverlay = false }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -40,67 +34,57 @@ function KanbanCard({ demanda, onEditar, onExcluir, onVerFichario, isOverlay = f
     opacity: isDragging ? 0.4 : 1,
   };
 
-  const diasAberto = Math.floor(
-    (new Date().getTime() - new Date(demanda.dataCriacao).getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const dataCriacao = demanda.dataCriacao || demanda.createdAt;
+  const diasAberto = dataCriacao
+    ? Math.floor((new Date().getTime() - new Date(dataCriacao).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`kanban-card ${isOverlay ? 'is-overlay' : ''}`}
+      onClick={() => onVerFichario(demanda)}
     >
       {/* Drag handle */}
-      <div className="card-drag-strip" {...attributes} {...listeners}>
+      <div
+        className="card-drag-strip"
+        {...attributes}
+        {...listeners}
+        onClick={e => e.stopPropagation()}
+      >
         <GripVertical size={12} />
       </div>
 
-      {/* Clique no corpo abre Fichário */}
-      <div className="card-body" onClick={() => onVerFichario(demanda)}>
-
+      <div className="card-body">
         <div className="card-toprow">
           <span className="card-priority-dot" style={{ background: CORES_PRIORIDADE[demanda.prioridade] }} />
           <h4 className="card-client">{demanda.nomeCliente}</h4>
+        </div>
 
-          <div className="card-menu-wrap" onClick={e => e.stopPropagation()}>
-            <button className="card-menu-trigger" onClick={() => setShowMenu(s => !s)}>
-              <MoreVertical size={13} />
-            </button>
-            {showMenu && (
-              <div className="card-menu">
-                <button onClick={() => { onVerFichario(demanda); setShowMenu(false); }}>
-                  <FolderOpen size={13} /> Ver Fichário
-                </button>
-                <button onClick={() => { onEditar(demanda); setShowMenu(false); }}>
-                  <Edit2 size={13} /> Editar
-                </button>
-                <button className="danger" onClick={() => { onExcluir(demanda._id || demanda.id); setShowMenu(false); }}>
-                  <Trash2 size={13} /> Excluir
-                </button>
-              </div>
-            )}
+        {demanda.cnpj && (
+          <div className="card-info-row">
+            <span className="card-cnpj">{demanda.cnpj}</span>
           </div>
-        </div>
-
-        <div className="card-info-row">
-          {demanda.cnpj && <span className="card-cnpj">{demanda.cnpj}</span>}
-        </div>
+        )}
 
         <div className="card-footer-row">
-          <span className="card-tag"><Building2 size={10} />{demanda.marca}</span>
+          {demanda.marca && <span className="card-tag"><Building2 size={10} />{demanda.marca}</span>}
           {(demanda as any).representante && (
             <span className="card-tag"><User size={10} />{(demanda as any).representante}</span>
           )}
-          <span className={`card-age-badge ${diasAberto > 7 ? 'overdue' : ''}`}>
-            <Clock size={10} />{diasAberto}d
-          </span>
+          {diasAberto !== null && (
+            <span className={`card-age-badge ${diasAberto > 7 ? 'overdue' : ''}`}>
+              <Clock size={10} />{diasAberto}d
+            </span>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onVerFichario }: KanbanBoardProps) {
+export function KanbanBoard({ demandas, onMoverDemanda, onVerFichario }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -156,8 +140,6 @@ export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onV
                     <KanbanCard
                       key={demanda._id || demanda.id}
                       demanda={demanda}
-                      onEditar={onEditar}
-                      onExcluir={onExcluir}
                       onVerFichario={onVerFichario}
                     />
                   ))}
@@ -178,8 +160,6 @@ export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onV
         {activeDemanda ? (
           <KanbanCard
             demanda={activeDemanda}
-            onEditar={() => {}}
-            onExcluir={() => {}}
             onVerFichario={() => {}}
             isOverlay
           />
@@ -372,45 +352,8 @@ export function KanbanBoard({ demandas, onMoverDemanda, onEditar, onExcluir, onV
           text-overflow: ellipsis;
         }
 
-        /* Card menu */
-        .card-menu-wrap { position: relative; flex-shrink: 0; }
-
-        .card-menu-trigger {
-          background: none;
-          border: none;
-          padding: 3px;
-          cursor: pointer;
-          color: var(--color-text-muted);
-          border-radius: var(--radius-xs);
-          display: flex;
-          transition: var(--transition-fast);
-        }
-        .card-menu-trigger:hover { background: var(--color-cream); color: var(--color-text); }
-
-        .card-menu {
-          position: absolute;
-          top: calc(100% + 4px);
-          right: 0;
-          background: var(--color-white);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-md);
-          box-shadow: var(--shadow-lg);
-          z-index: 20;
-          min-width: 130px;
-          overflow: hidden;
-          animation: scaleIn 0.15s ease-out;
-          transform-origin: top right;
-        }
-        .card-menu button {
-          width: 100%; padding: 9px 13px;
-          background: none; border: none; text-align: left;
-          cursor: pointer; font-size: 0.8125rem; font-family: var(--font-body);
-          display: flex; align-items: center; gap: 7px;
-          transition: background 0.15s; color: var(--color-text);
-        }
-        .card-menu button:hover { background: var(--color-cream); }
-        .card-menu button.danger { color: var(--color-danger); }
-        .card-menu button.danger:hover { background: #fff1f2; }
+        /* card body cursor */
+        .card-body { cursor: pointer; }
 
         /* CNPJ */
         .card-info-row { min-height: 0; }

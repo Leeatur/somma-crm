@@ -1,6 +1,6 @@
 import type { Demanda } from '../types';
 import { STATUS_SITUACAO, CORES_STATUS } from '../types';
-import { X, User, Building2, Phone, DollarSign, CalendarDays, Tag, FileText, Hash } from 'lucide-react';
+import { X, User, Building2, Phone, DollarSign, CalendarDays, Tag, FileText, Hash, Edit2, Trash2 } from 'lucide-react';
 
 interface EntradaHistorico {
   id: string;
@@ -13,6 +13,8 @@ interface EntradaHistorico {
 interface FicharioDemandaProps {
   demanda: Demanda;
   onFechar: () => void;
+  onEditar?: (demanda: Demanda) => void;
+  onExcluir?: (id: string) => void;
 }
 
 function parseHistorico(obs: string | undefined): EntradaHistorico[] {
@@ -30,7 +32,7 @@ function formatDate(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
-export function FicharioDemanda({ demanda, onFechar }: FicharioDemandaProps) {
+export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: FicharioDemandaProps) {
   const historico: EntradaHistorico[] = demanda.historicoObservacoes?.length
     ? (demanda.historicoObservacoes as unknown as EntradaHistorico[])
     : parseHistorico(demanda.observacoes);
@@ -60,7 +62,21 @@ export function FicharioDemanda({ demanda, onFechar }: FicharioDemandaProps) {
               </span>
             </div>
           </div>
-          <button className="fich-close" onClick={onFechar}><X size={20} /></button>
+          <div className="fich-actions">
+            {onEditar && (
+              <button className="fich-btn-edit" onClick={() => { onEditar(demanda); onFechar(); }}>
+                <Edit2 size={15} /> Editar
+              </button>
+            )}
+            {onExcluir && (
+              <button className="fich-btn-delete" onClick={() => {
+                if (confirm('Excluir esta demanda?')) { onExcluir(demanda._id || demanda.id); onFechar(); }
+              }}>
+                <Trash2 size={15} />
+              </button>
+            )}
+            <button className="fich-close" onClick={onFechar}><X size={20} /></button>
+          </div>
         </div>
 
         <div className="fich-body">
@@ -201,11 +217,37 @@ export function FicharioDemanda({ demanda, onFechar }: FicharioDemandaProps) {
           display: inline-block; padding: 4px 11px; border-radius: 99px;
           font-size: 0.7rem; font-weight: 700; border: 1px solid; letter-spacing: 0.03em;
         }
+        .fich-actions {
+          position: absolute; top: 12px; right: 12px;
+          display: flex; align-items: center; gap: 6px;
+        }
+
+        .fich-btn-edit {
+          display: flex; align-items: center; gap: 6px;
+          padding: 7px 14px;
+          background: var(--color-gold);
+          color: var(--color-primary);
+          border: none; border-radius: var(--radius-sm);
+          font-size: 0.8rem; font-weight: 700;
+          cursor: pointer; transition: var(--transition-smooth);
+        }
+        .fich-btn-edit:hover { background: #e6b820; }
+
+        .fich-btn-delete {
+          display: flex; align-items: center; justify-content: center;
+          width: 34px; height: 34px;
+          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+          color: rgba(255,255,255,0.7); border-radius: var(--radius-sm);
+          cursor: pointer; transition: var(--transition-smooth);
+        }
+        .fich-btn-delete:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+
         .fich-close {
-          position: absolute; top: 0; right: 0;
+          display: flex; align-items: center; justify-content: center;
+          width: 34px; height: 34px;
           background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-          color: rgba(255,255,255,0.7); cursor: pointer; padding: 8px;
-          border-radius: var(--radius-sm); display: flex; transition: var(--transition-smooth);
+          color: rgba(255,255,255,0.7); cursor: pointer;
+          border-radius: var(--radius-sm); transition: var(--transition-smooth);
         }
         .fich-close:hover { background: rgba(255,255,255,0.18); color: #fff; }
 
