@@ -382,39 +382,39 @@ export function Relatorio({ demandas, onFechar }: RelatorioProps) {
 
         /* Resumo */
         .rel-summary {
-          display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-          padding: 10px 18px; background: #fff; border-bottom: 1px solid #e8e3da;
+          display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+          padding: 7px 16px; background: #fff; border-bottom: 1px solid #e8e3da;
           overflow-x: auto;
         }
         .rel-summary-total {
           display: flex; flex-direction: column; align-items: center;
-          padding: 4px 13px; border-radius: 8px;
-          background: #0d2e58; color: #fff; flex-shrink: 0; margin-right: 4px;
+          padding: 3px 11px; border-radius: 7px;
+          background: #0d2e58; color: #fff; flex-shrink: 0; margin-right: 3px;
         }
-        .rel-summary-num { font-size: 1.2rem; font-weight: 800; line-height: 1; }
-        .rel-summary-label { font-size: 0.58rem; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.06em; }
+        .rel-summary-num { font-size: 1rem; font-weight: 800; line-height: 1; }
+        .rel-summary-label { font-size: 0.53rem; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.06em; }
         .rel-summary-chip {
-          display: flex; align-items: center; gap: 4px;
-          padding: 3px 10px; border-radius: 99px; border: 1.5px solid;
+          display: flex; align-items: center; gap: 3px;
+          padding: 2px 8px; border-radius: 99px; border: 1.5px solid;
           background: #fff; white-space: nowrap; flex-shrink: 0;
         }
-        .rel-chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .rel-chip-label { font-size: 0.65rem; color: #555; font-weight: 500; }
-        .rel-chip-count { font-size: 0.72rem; font-weight: 800; }
+        .rel-chip-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+        .rel-chip-label { font-size: 0.6rem; color: #555; font-weight: 500; }
+        .rel-chip-count { font-size: 0.65rem; font-weight: 800; }
 
         /* Filtros */
         .rel-filtros {
-          display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap;
-          padding: 10px 18px 9px; background: #faf8f4; border-bottom: 1px solid #e8e3da;
+          display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap;
+          padding: 7px 16px 6px; background: #faf8f4; border-bottom: 1px solid #e8e3da;
         }
-        .rel-filtro-icon { color: #888; margin-top: 2px; flex-shrink: 0; }
-        .rel-filtro-label { font-size: 0.72rem; font-weight: 600; color: #666; white-space: nowrap; padding-top: 3px; flex-shrink: 0; }
-        .rel-filtro-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+        .rel-filtro-icon { color: #888; margin-top: 1px; flex-shrink: 0; }
+        .rel-filtro-label { font-size: 0.67rem; font-weight: 600; color: #666; white-space: nowrap; padding-top: 2px; flex-shrink: 0; }
+        .rel-filtro-pills { display: flex; flex-wrap: wrap; gap: 4px; }
         .rel-pill {
-          display: inline-flex; align-items: center; gap: 4px;
-          padding: 3px 11px; border-radius: 99px;
+          display: inline-flex; align-items: center; gap: 3px;
+          padding: 2px 9px; border-radius: 99px;
           border: 1.5px solid #ccc; background: #fff;
-          font-size: 0.67rem; font-weight: 600; color: #555;
+          font-size: 0.62rem; font-weight: 600; color: #555;
           cursor: pointer; transition: all 0.15s;
         }
         .rel-pill:hover { border-color: #0d2e58; color: #0d2e58; }
@@ -422,67 +422,57 @@ export function Relatorio({ demandas, onFechar }: RelatorioProps) {
         .rel-pill-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 
         /* Corpo */
-        .rel-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 14px; }
+        .rel-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
 
         /* Bloco status */
-        .rel-status-bloco { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 5px rgba(0,0,0,0.07); }
+        .rel-status-bloco { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
         .rel-status-header {
           display: flex; align-items: center; justify-content: space-between;
-          padding: 9px 14px; border-left: 4px solid; background: #fafaf8; border-bottom: 1px solid #f0ece4;
+          padding: 6px 12px; border-left: 4px solid; background: #fafaf8; border-bottom: 1px solid #f0ece4;
         }
         .rel-status-pill {
-          display: inline-flex; align-items: center; gap: 6px;
-          padding: 4px 12px; border-radius: 99px; border: 1.5px solid;
-          font-size: 0.73rem; font-weight: 700; letter-spacing: 0.02em;
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 3px 10px; border-radius: 99px; border: 1.5px solid;
+          font-size: 0.67rem; font-weight: 700; letter-spacing: 0.02em;
         }
-        .rel-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .rel-status-count { font-size: 0.7rem; color: #999; font-weight: 500; }
-        .rel-vazio { padding: 12px 14px; color: #bbb; font-size: 0.75rem; font-style: italic; margin: 0; }
+        .rel-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .rel-status-count { font-size: 0.65rem; color: #999; font-weight: 500; }
+        .rel-vazio { padding: 9px 12px; color: #bbb; font-size: 0.7rem; font-style: italic; margin: 0; }
 
         /* Cards demanda */
         .rel-demandas { display: flex; flex-direction: column; }
-        .rel-demanda-card {
-          display: flex; gap: 0; border-bottom: 1px solid #f0ece4;
-        }
+        .rel-demanda-card { display: flex; gap: 0; border-bottom: 1px solid #f0ece4; }
         .rel-demanda-card:last-child { border-bottom: none; }
         .rel-demanda-num {
-          padding: 12px 10px; font-size: 0.68rem; font-weight: 800;
-          min-width: 44px; border-right: 1px solid #f0ece4;
-          display: flex; align-items: flex-start; justify-content: center; padding-top: 14px;
+          padding: 8px; font-size: 0.63rem; font-weight: 800;
+          min-width: 38px; border-right: 1px solid #f0ece4;
+          display: flex; align-items: flex-start; justify-content: center; padding-top: 10px;
         }
-        .rel-demanda-content { flex: 1; padding: 10px 14px; display: flex; flex-direction: column; gap: 7px; }
+        .rel-demanda-content { flex: 1; padding: 7px 12px; display: flex; flex-direction: column; gap: 5px; }
 
-        .rel-demanda-title-row {
-          display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-        }
-        .rel-demanda-nome { font-size: 0.875rem; font-weight: 700; color: #0d2e58; }
-        .rel-demanda-cnpj {
-          font-size: 0.7rem; color: #888; background: #f0ece4; padding: 2px 7px; border-radius: 5px;
-        }
+        .rel-demanda-title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .rel-demanda-nome { font-size: 0.8rem; font-weight: 700; color: #0d2e58; }
+        .rel-demanda-cnpj { font-size: 0.65rem; color: #888; background: #f0ece4; padding: 1px 6px; border-radius: 4px; }
         .rel-demanda-valor {
-          margin-left: auto; font-size: 0.8rem; font-weight: 800; color: #15803d;
-          background: #dcfce7; padding: 2px 10px; border-radius: 99px;
+          margin-left: auto; font-size: 0.72rem; font-weight: 800; color: #15803d;
+          background: #dcfce7; padding: 1px 8px; border-radius: 99px;
         }
 
-        .rel-campos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px 14px; }
-        .rel-campo { display: flex; flex-direction: column; gap: 1px; }
-        .rel-campo-label { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #aaa; }
-        .rel-campo-valor { font-size: 0.75rem; color: #333; font-weight: 500; }
+        .rel-campos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 12px; }
+        .rel-campo { display: flex; flex-direction: column; gap: 0px; }
+        .rel-campo-label { font-size: 0.53rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #aaa; }
+        .rel-campo-valor { font-size: 0.7rem; color: #333; font-weight: 500; }
 
         /* Tabela histórico */
-        .rel-historico { border: 1px solid #e8e3da; border-radius: 6px; overflow: hidden; margin-top: 2px; }
-        .rel-hist-head, .rel-hist-row {
-          display: grid; grid-template-columns: 84px 100px 56px 1fr 80px;
-        }
+        .rel-historico { border: 1px solid #e8e3da; border-radius: 5px; overflow: hidden; margin-top: 2px; }
+        .rel-hist-head, .rel-hist-row { display: grid; grid-template-columns: 78px 94px 52px 1fr 76px; }
         .rel-hist-head {
-          background: #f0ece4; font-size: 0.6rem; font-weight: 700;
+          background: #f0ece4; font-size: 0.55rem; font-weight: 700;
           text-transform: uppercase; letter-spacing: 0.05em; color: #888;
         }
-        .rel-hist-head span, .rel-hist-row span {
-          padding: 4px 8px; border-right: 1px solid #e8e3da;
-        }
+        .rel-hist-head span, .rel-hist-row span { padding: 3px 7px; border-right: 1px solid #e8e3da; }
         .rel-hist-head span:last-child, .rel-hist-row span:last-child { border-right: none; }
-        .rel-hist-row { border-top: 1px solid #e8e3da; font-size: 0.72rem; color: #333; }
+        .rel-hist-row { border-top: 1px solid #e8e3da; font-size: 0.68rem; color: #333; }
         .rel-hist-row:nth-child(even) { background: #fafaf8; }
         .rh-data { color: #1a56db !important; font-weight: 600 !important; }
         .rh-ref  { color: #7c3aed !important; font-weight: 600 !important; }
@@ -491,7 +481,7 @@ export function Relatorio({ demandas, onFechar }: RelatorioProps) {
 
         @media (max-width: 640px) {
           .rel-campos-grid { grid-template-columns: repeat(2, 1fr); }
-          .rel-hist-head, .rel-hist-row { grid-template-columns: 75px 85px 45px 1fr 72px; }
+          .rel-hist-head, .rel-hist-row { grid-template-columns: 70px 80px 42px 1fr 68px; }
         }
       `}</style>
     </div>
