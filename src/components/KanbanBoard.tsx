@@ -4,7 +4,7 @@ import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { Demanda } from '../types';
 import { COLUNAS_KANBAN, CORES_PRIORIDADE } from '../types';
-import { Clock, GripVertical, Building2, User } from 'lucide-react';
+import { Clock, Building2, User, GripVertical } from 'lucide-react';
 
 interface KanbanBoardProps {
   demandas: Demanda[];
@@ -18,66 +18,51 @@ interface KanbanCardProps {
   isOverlay?: boolean;
 }
 
+const PRIORIDADE_LABEL: Record<string, string> = {
+  urgente: 'URG', alta: 'ALTA', media: 'MED', baixa: 'BAIXA',
+};
+
 function KanbanCard({ demanda, onVerFichario, isOverlay = false }: KanbanCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: demanda._id || demanda.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
-
-  const dataCriacao = demanda.dataCriacao || demanda.createdAt;
-  const diasAberto = dataCriacao
-    ? Math.floor((new Date().getTime() - new Date(dataCriacao).getTime()) / (1000 * 60 * 60 * 24))
-    : null;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: demanda._id || demanda.id,
+  });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : 1 };
+  const rawData = demanda.dataCriacao || demanda.createdAt;
+  const diasAberto = rawData ? Math.floor((Date.now() - new Date(rawData).getTime()) / 86400000) : null;
+  const priorCor = CORES_PRIORIDADE[demanda.prioridade] ?? '#6b7280';
+  const isUrgente = demanda.prioridade === 'urgente';
+  const isAlta    = demanda.prioridade === 'alta';
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`kanban-card ${isOverlay ? 'is-overlay' : ''}`}
+    <div ref={setNodeRef} style={style}
+      className={`kcard ${isOverlay ? 'kcard--overlay' : ''} ${isUrgente ? 'kcard--urgente' : ''}`}
       onClick={() => onVerFichario(demanda)}
     >
-      {/* Drag handle */}
-      <div
-        className="card-drag-strip"
-        {...attributes}
-        {...listeners}
-        onClick={e => e.stopPropagation()}
-      >
-        <GripVertical size={12} />
+      <div className="kcard-priority-bar" style={{ background: priorCor }} />
+      <div className="kcard-drag" {...attributes} {...listeners} onClick={e => e.stopPropagation()}>
+        <GripVertical size={11} />
       </div>
-
-      <div className="card-body">
-        <div className="card-toprow">
-          <span className="card-priority-dot" style={{ background: CORES_PRIORIDADE[demanda.prioridade] }} />
-          <h4 className="card-client">{demanda.nomeCliente}</h4>
-        </div>
-
-        {demanda.cnpj && (
-          <div className="card-info-row">
-            <span className="card-cnpj">{demanda.cnpj}</span>
+      <div className="kcard-content">
+        <div className="kcard-row kcard-row--top">
+          <span className="kcard-nome">{demanda.nomeCliente}</span>
+          <div className="kcard-badges">
+            {(isUrgente || isAlta) && (
+              <span className="kcard-prio-badge" style={{ background: priorCor + '22', color: priorCor, borderColor: priorCor + '55' }}>
+                {PRIORIDADE_LABEL[demanda.prioridade]}
+              </span>
+            )}
+            {diasAberto !== null && (
+              <span className={`kcard-dias ${diasAberto > 14 ? 'kcard-dias--vencido' : diasAberto > 7 ? 'kcard-dias--alerta' : ''}`}>
+                <Clock size={9} />{diasAberto}d
+              </span>
+            )}
           </div>
-        )}
-
-        <div className="card-footer-row">
-          {demanda.marca && <span className="card-tag"><Building2 size={10} />{demanda.marca}</span>}
-          {(demanda as any).representante && (
-            <span className="card-tag"><User size={10} />{(demanda as any).representante}</span>
-          )}
-          {diasAberto !== null && (
-            <span className={`card-age-badge ${diasAberto > 7 ? 'overdue' : ''}`}>
-              <Clock size={10} />{diasAberto}d
-            </span>
-          )}
+        </div>
+        {demanda.cnpj && <span className="kcard-cnpj">{demanda.cnpj}</span>}
+        <div className="kcard-tags">
+          {demanda.marca && <span className="kcard-tag kcard-tag--marca"><Building2 size={9} />{demanda.marca}</span>}
+          {(demanda as any).representante && <span className="kcard-tag kcard-tag--rep"><User size={9} />{(demanda as any).representante}</span>}
+          {demanda.valor && <span className="kcard-tag kcard-tag--valor">R${demanda.valor}</span>}
         </div>
       </div>
     </div>
@@ -86,69 +71,41 @@ function KanbanCard({ demanda, onVerFichario, isOverlay = false }: KanbanCardPro
 
 export function KanbanBoard({ demandas, onMoverDemanda, onVerFichario }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+    useSensor(TouchSensor,   { activationConstraint: { delay: 250, tolerance: 5 } })
   );
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragStart = (e: DragStartEvent) => setActiveId(e.active.id as string);
+  const handleDragEnd   = (e: DragEndEvent) => {
+    const { active, over } = e;
     setActiveId(null);
     if (!over) return;
-    const overId = over.id as string;
-    if (COLUNAS_KANBAN.some(col => col.id === overId)) {
-      onMoverDemanda(active.id as string, overId as Demanda['status']);
-    }
+    if (COLUNAS_KANBAN.some(c => c.id === (over.id as string)))
+      onMoverDemanda(active.id as string, over.id as Demanda['status']);
   };
-
   const activeDemanda = activeId ? demandas.find(d => (d._id || d.id) === activeId) : null;
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="kanban-board">
-        {COLUNAS_KANBAN.map((coluna, idx) => {
-          const demandasColuna = demandas.filter(d => d.status === coluna.id);
-
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="kboard">
+        {COLUNAS_KANBAN.map((col, idx) => {
+          const lista = demandas.filter(d => d.status === col.id);
           return (
-            <div
-              key={coluna.id}
-              className="kanban-column"
-              style={{ animationDelay: `${idx * 0.05}s` }}
+            <div key={col.id} className="kcol"
+              style={{ animationDelay: `${idx * 0.04}s`, '--kcol-cor': col.cor } as React.CSSProperties}
             >
-              <div className="column-header" style={{ '--col-color': coluna.cor } as React.CSSProperties}>
-                <span className="column-dot" style={{ background: coluna.cor }} />
-                <h3 className="column-title-text">{coluna.titulo}</h3>
-                <span className="column-badge">{demandasColuna.length}</span>
+              <div className="kcol-header">
+                <div className="kcol-stripe" style={{ background: col.cor }} />
+                <span className="kcol-dot" style={{ background: col.cor }} />
+                <span className="kcol-titulo">{col.titulo}</span>
+                <span className="kcol-count">{lista.length}</span>
               </div>
-
-              <SortableContext
-                items={demandasColuna.map(d => d._id || d.id)}
-                strategy={rectSortingStrategy}
-              >
-                <div className="column-cards" data-status={coluna.id}>
-                  {demandasColuna.map(demanda => (
-                    <KanbanCard
-                      key={demanda._id || demanda.id}
-                      demanda={demanda}
-                      onVerFichario={onVerFichario}
-                    />
+              <SortableContext items={lista.map(d => d._id || d.id)} strategy={rectSortingStrategy}>
+                <div className="kcol-cards" data-status={col.id}>
+                  {lista.map(d => (
+                    <KanbanCard key={d._id || d.id} demanda={d} onVerFichario={onVerFichario} />
                   ))}
-
-                  {demandasColuna.length === 0 && (
-                    <div className="column-empty">
-                      <span>Nenhuma demanda</span>
-                    </div>
-                  )}
+                  {lista.length === 0 && <div className="kcol-empty">Nenhuma demanda</div>}
                 </div>
               </SortableContext>
             </div>
@@ -157,263 +114,119 @@ export function KanbanBoard({ demandas, onMoverDemanda, onVerFichario }: KanbanB
       </div>
 
       <DragOverlay>
-        {activeDemanda ? (
-          <KanbanCard
-            demanda={activeDemanda}
-            onVerFichario={() => {}}
-            isOverlay
-          />
-        ) : null}
+        {activeDemanda && <KanbanCard demanda={activeDemanda} onVerFichario={() => {}} isOverlay />}
       </DragOverlay>
 
       <style>{`
-        /* ── Board: scroll horizontal, colunas crescem verticalmente ── */
-        .kanban-board {
-          display: flex;
-          gap: 12px;
-          overflow-x: auto;
-          padding: 4px 4px 40px;
-          align-items: flex-start;
-          scrollbar-width: thin;
-          scrollbar-color: var(--color-border) transparent;
+        .kboard {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 10px;
+          padding: 2px 2px 28px;
+          align-items: start;
         }
-
-        .kanban-board::-webkit-scrollbar { height: 6px; }
-        .kanban-board::-webkit-scrollbar-track { background: transparent; }
-        .kanban-board::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 99px; }
-
-        /* ── Column: sem altura máxima, cresce com os cards ── */
-        .kanban-column {
-          flex: 0 0 260px;
-          width: 260px;
-          min-width: 260px;
-          display: flex;
-          flex-direction: column;
-          border-radius: var(--radius-lg);
-          background: rgba(255,255,255,0.45);
-          backdrop-filter: blur(6px);
-          border: 1px solid var(--color-border-light);
-          animation: fadeIn 0.4s ease-out both;
+        .kcol {
+          min-width: 0; display: flex; flex-direction: column;
+          border-radius: 14px;
+          background: rgba(255,255,255,0.58);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255,255,255,0.85);
+          box-shadow: 0 2px 12px rgba(11,31,58,0.07);
+          animation: slideInUp 0.4s ease-out both;
           transition: var(--transition-smooth);
         }
+        .kcol:hover { background: rgba(255,255,255,0.76); }
 
-        .kanban-column:hover {
-          background: rgba(255,255,255,0.65);
-        }
-
-        /* ── Column Header ── */
-        .column-header {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 12px 14px;
+        .kcol-header {
+          display: flex; align-items: center; gap: 6px;
+          padding: 10px 11px 9px;
           border-bottom: 1px solid var(--color-border-light);
-          background: var(--color-white);
-          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-          position: relative;
-          overflow: hidden;
+          background: rgba(255,255,255,0.9);
+          border-radius: 14px 14px 0 0;
+          position: relative; overflow: hidden;
+        }
+        .kcol-stripe { position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; }
+        .kcol-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 5px currentColor; margin-top: 1px; }
+        .kcol-titulo {
+          flex: 1; font-size: 0.58rem; font-weight: 700; color: var(--color-primary);
+          text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.25; word-break: break-word;
+        }
+        .kcol-count {
+          background: var(--color-cream); color: var(--color-text-light);
+          font-size: 0.62rem; font-weight: 800; padding: 1px 7px;
+          border-radius: 99px; flex-shrink: 0; border: 1px solid var(--color-border-light);
+        }
+        .kcol-cards { padding: 6px 5px; display: flex; flex-direction: column; gap: 5px; }
+        .kcol-empty {
+          margin: 4px; padding: 14px 6px; text-align: center;
+          color: var(--color-text-muted); font-size: 0.66rem; font-style: italic;
+          border: 1.5px dashed var(--color-border); border-radius: 9px;
         }
 
-        .column-header::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 2.5px;
-          background: var(--col-color, var(--color-gold));
-          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-        }
-
-        .column-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          flex-shrink: 0;
-          box-shadow: 0 0 6px currentColor;
-          margin-top: 3px;
-        }
-
-        .column-title-text {
-          font-family: var(--font-body);
-          font-size: 0.7rem;
-          font-weight: 600;
-          color: var(--color-text);
-          flex: 1;
-          white-space: normal;
-          overflow: visible;
-          word-break: break-word;
-          line-height: 1.25;
-          letter-spacing: 0.01em;
-          text-transform: uppercase;
-        }
-
-        .column-badge {
-          background: var(--color-cream);
-          color: var(--color-text-light);
-          padding: 2px 8px;
-          border-radius: var(--radius-full);
-          font-size: 0.6875rem;
-          font-weight: 700;
-          flex-shrink: 0;
-        }
-
-        /* ── Cards container ── */
-        .column-cards {
-          padding: 8px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .column-empty {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px 12px;
-          color: var(--color-text-muted);
-          font-size: 0.75rem;
-          font-style: italic;
-          border: 1.5px dashed var(--color-border);
-          border-radius: var(--radius-md);
-          margin: 4px;
-        }
-
-        /* ── Kanban Card compacto ── */
-        .kanban-card {
-          background: var(--color-white);
-          border-radius: var(--radius-md);
+        /* ── Card ── */
+        .kcard {
+          background: var(--color-white); border-radius: 9px;
           border: 1px solid var(--color-border-light);
-          box-shadow: var(--shadow-xs);
+          box-shadow: 0 1px 4px rgba(11,31,58,0.06);
+          display: flex; overflow: hidden; cursor: pointer;
           transition: var(--transition-smooth);
-          display: flex;
-          overflow: hidden;
         }
-
-        .kanban-card:hover {
-          box-shadow: var(--shadow-md);
-          transform: translateY(-1px);
-          border-color: var(--color-gold);
+        .kcard:hover {
+          box-shadow: 0 4px 16px rgba(11,31,58,0.13);
+          transform: translateY(-1px); border-color: var(--color-gold);
         }
-
-        .kanban-card.is-overlay {
-          box-shadow: var(--shadow-xl);
-          transform: rotate(1.5deg) scale(1.03);
+        .kcard--overlay { box-shadow: 0 12px 40px rgba(11,31,58,0.22); transform: rotate(1.5deg) scale(1.03); }
+        .kcard--urgente { animation: pulse-urgente 2.2s ease-in-out infinite; }
+        @keyframes pulse-urgente {
+          0%,100% { box-shadow: 0 1px 4px rgba(11,31,58,0.06); }
+          50% { box-shadow: 0 2px 14px rgba(220,38,38,0.22); }
         }
-
-        /* Drag strip */
-        .card-drag-strip {
-          width: 14px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: grab;
-          color: var(--color-text-muted);
-          background: var(--color-cream);
-          border-right: 1px solid var(--color-border-light);
-          opacity: 0;
-          transition: opacity 0.2s;
+        .kcard-priority-bar { width: 4px; flex-shrink: 0; }
+        .kcard-drag {
+          width: 13px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+          cursor: grab; color: var(--color-text-muted); opacity: 0; transition: opacity 0.18s;
+          background: var(--color-cream); border-right: 1px solid var(--color-border-light);
         }
-        .kanban-card:hover .card-drag-strip { opacity: 1; }
-        .card-drag-strip:active { cursor: grabbing; }
-
-        /* Card body — clicável */
-        .card-body {
-          flex: 1;
-          min-width: 0;
-          padding: 9px 10px 8px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          cursor: pointer;
+        .kcard:hover .kcard-drag { opacity: 1; }
+        .kcard-drag:active { cursor: grabbing; }
+        .kcard-content {
+          flex: 1; min-width: 0; padding: 8px 8px 6px;
+          display: flex; flex-direction: column; gap: 3px;
         }
-
-        /* Top row: dot + nome + menu */
-        .card-toprow {
-          display: flex;
-          align-items: center;
-          gap: 6px;
+        .kcard-row { display: flex; align-items: flex-start; gap: 4px; }
+        .kcard-row--top { justify-content: space-between; }
+        .kcard-nome {
+          font-size: 0.75rem; font-weight: 700; color: var(--color-primary);
+          line-height: 1.2; flex: 1; min-width: 0;
+          overflow: hidden; display: -webkit-box;
+          -webkit-line-clamp: 2; -webkit-box-orient: vertical;
         }
-
-        .card-priority-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          flex-shrink: 0;
+        .kcard-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; margin-left: 3px; }
+        .kcard-prio-badge {
+          font-size: 0.52rem; font-weight: 800; padding: 1px 4px;
+          border-radius: 4px; border: 1px solid; letter-spacing: 0.03em; white-space: nowrap;
         }
-
-        .card-client {
-          flex: 1;
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: var(--color-primary);
-          line-height: 1.25;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+        .kcard-dias {
+          display: inline-flex; align-items: center; gap: 2px;
+          font-size: 0.58rem; font-weight: 700; padding: 1px 5px;
+          border-radius: 99px; background: var(--color-cream); color: var(--color-text-muted);
         }
-
-        /* card body cursor */
-        .card-body { cursor: pointer; }
-
-        /* CNPJ */
-        .card-info-row { min-height: 0; }
-        .card-cnpj {
-          font-size: 0.6875rem;
-          color: var(--color-text-muted);
-          letter-spacing: 0.03em;
+        .kcard-dias--alerta  { background: #fef3c7; color: #92400e; }
+        .kcard-dias--vencido { background: #fee2e2; color: #dc2626; font-weight: 800; }
+        .kcard-cnpj { font-size: 0.59rem; color: var(--color-text-muted); letter-spacing: 0.03em; }
+        .kcard-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 1px; }
+        .kcard-tag {
+          display: inline-flex; align-items: center; gap: 2px;
+          font-size: 0.57rem; font-weight: 600; padding: 2px 5px; border-radius: 5px;
+          max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
+        .kcard-tag--marca { background: #eff6ff; color: #1e40af; }
+        .kcard-tag--rep   { background: #f5f3ff; color: #6d28d9; }
+        .kcard-tag--valor { background: #f0fdf4; color: #15803d; font-weight: 700; }
 
-        /* Footer row com tags */
-        .card-footer-row {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          flex-wrap: wrap;
-          margin-top: 2px;
-        }
-
-        .card-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 3px;
-          font-size: 0.6rem;
-          color: var(--color-text-light);
-          background: var(--color-cream);
-          padding: 2px 6px;
-          border-radius: 99px;
-          white-space: nowrap;
-          max-width: 90px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .card-age-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 3px;
-          font-size: 0.6rem;
-          padding: 2px 6px;
-          border-radius: 99px;
-          background: var(--color-cream);
-          color: var(--color-text-muted);
-          margin-left: auto;
-        }
-
-        .card-age-badge.overdue {
-          background: #fee2e2;
-          color: var(--color-danger);
-          font-weight: 700;
-        }
-
-        /* Card footer — remover referências antigas */
-        .card-footer, .card-date, .card-age { display: none;
-          margin-bottom: 4px;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-          .kanban-column { flex: 0 0 220px; width: 220px; min-width: 220px; }
-        }
+        @media (max-width: 1100px) { .kboard { grid-template-columns: repeat(4,1fr); } }
+        @media (max-width: 768px)  { .kboard { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width: 480px)  { .kboard { grid-template-columns: 1fr; } }
       `}</style>
     </DndContext>
   );
