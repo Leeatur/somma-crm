@@ -1,6 +1,6 @@
 import type { Demanda } from '../types';
 import { COLUNAS_KANBAN } from '../types';
-import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText } from 'lucide-react';
+import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Flame, TrendingUp } from 'lucide-react';
 
 interface DashboardProps {
   demandas: Demanda[];
@@ -86,6 +86,18 @@ export function Dashboard({
           </button>
         </div>
       </div>
+
+      {/* ══ Banner de urgência ══ */}
+      {estatisticas.pendentes > 0 && (
+        <div className="dash-urgency-banner" onClick={() => setFiltroStatus('em_andamento')}>
+          <Flame size={14} className="dash-urgency-icon" />
+          <span>
+            <strong>{estatisticas.pendentes}</strong> demanda{estatisticas.pendentes > 1 ? 's' : ''} aguardam resolução
+            {estatisticas.urgentes > 0 && <> · <strong style={{color:'#fca5a5'}}>{estatisticas.urgentes} urgente{estatisticas.urgentes > 1 ? 's' : ''}</strong></>}
+          </span>
+          <span className="dash-urgency-cta">Ver todas <TrendingUp size={11} /></span>
+        </div>
+      )}
 
       {/* ══ Métricas principais ══ */}
       <div className="dash-metrics">
@@ -295,15 +307,45 @@ export function Dashboard({
         .dash-btn-nova {
           display: flex; align-items: center; gap: 9px;
           padding: 10px 22px;
-          background: linear-gradient(135deg, var(--color-gold) 0%, #a87820 100%);
-          color: var(--color-primary); border: none; border-radius: var(--radius-md);
+          background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+          color: #fff; border: none; border-radius: var(--radius-md);
           font-size: 0.875rem; font-weight: 700; cursor: pointer;
-          box-shadow: 0 4px 18px rgba(201,162,39,0.35);
+          box-shadow: 0 4px 18px rgba(234,88,12,0.38);
           transition: var(--transition-spring);
-          white-space: nowrap;
+          white-space: nowrap; animation: pulse-cta 3s ease-in-out infinite;
         }
-        .dash-btn-nova:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(201,162,39,0.45); }
+        @keyframes pulse-cta {
+          0%,100% { box-shadow: 0 4px 18px rgba(234,88,12,0.38); }
+          50%      { box-shadow: 0 6px 28px rgba(234,88,12,0.58); }
+        }
+        .dash-btn-nova:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(234,88,12,0.50); animation: none; }
         .dash-btn-nova:active { transform: translateY(0); }
+
+        /* ══ Banner de urgência ══ */
+        .dash-urgency-banner {
+          display: flex; align-items: center; gap: 10px;
+          background: linear-gradient(90deg, rgba(220,38,38,0.92) 0%, rgba(234,88,12,0.88) 100%);
+          color: #fff;
+          padding: 9px 18px; border-radius: var(--radius-md);
+          font-size: 0.8rem; font-weight: 600;
+          margin-bottom: 14px; cursor: pointer;
+          box-shadow: 0 3px 16px rgba(220,38,38,0.28);
+          animation: slideInUp 0.3s ease-out both;
+          transition: var(--transition-smooth);
+        }
+        .dash-urgency-banner:hover { transform: translateY(-1px); box-shadow: 0 5px 22px rgba(220,38,38,0.38); }
+        .dash-urgency-icon { flex-shrink: 0; animation: flicker 1.5s ease-in-out infinite; }
+        @keyframes flicker {
+          0%,100% { opacity: 1; transform: scale(1); }
+          50%      { opacity: 0.7; transform: scale(1.15); }
+        }
+        .dash-urgency-banner > span:nth-child(2) { flex: 1; }
+        .dash-urgency-cta {
+          display: flex; align-items: center; gap: 4px;
+          font-size: 0.72rem; opacity: 0.85; white-space: nowrap;
+          padding: 3px 10px; background: rgba(255,255,255,0.18); border-radius: 99px;
+        }
+        .dash-urgency-banner:hover .dash-urgency-cta { opacity: 1; background: rgba(255,255,255,0.28); }
 
         /* ══ Métricas ══ */
         .dash-metrics {
@@ -329,6 +371,11 @@ export function Dashboard({
         .metric-andamento.mc-active { border-color: #d97706; box-shadow: 0 0 0 2px #d9770644, var(--shadow-md); }
         .metric-resolvidos.mc-active { border-color: #059669; box-shadow: 0 0 0 2px #05966944, var(--shadow-md); }
         .metric-urgentes.mc-active  { border-color: #dc2626; box-shadow: 0 0 0 2px #dc262644, var(--shadow-md); }
+        .metric-urgentes { animation: pulse-urgentes-card 3s ease-in-out infinite; }
+        @keyframes pulse-urgentes-card {
+          0%,100% { box-shadow: var(--shadow-sm); }
+          50%      { box-shadow: 0 0 0 2px rgba(220,38,38,0.15), var(--shadow-sm); }
+        }
 
         /* Barra de cor no topo */
         .mc-bar {
@@ -375,8 +422,9 @@ export function Dashboard({
         }
 
         .status-tile {
-          background: var(--color-white);
-          border: 1.5px solid var(--color-border-light);
+          /* Tint permanente leve — a "temperatura" de cada status é sempre visível */
+          background: color-mix(in srgb, var(--st-cor) 6%, rgba(255,255,255,0.92));
+          border: 1.5px solid color-mix(in srgb, var(--st-cor) 22%, rgba(255,255,255,0.6));
           border-radius: var(--radius-md);
           padding: 12px 13px 10px;
           cursor: pointer; user-select: none;
@@ -384,14 +432,15 @@ export function Dashboard({
           display: flex; flex-direction: column; gap: 4px;
         }
         .status-tile:hover {
+          background: color-mix(in srgb, var(--st-cor) 13%, rgba(255,255,255,0.95));
           border-color: var(--st-cor);
-          box-shadow: 0 4px 16px color-mix(in srgb, var(--st-cor) 20%, transparent);
+          box-shadow: 0 5px 18px color-mix(in srgb, var(--st-cor) 25%, transparent);
           transform: translateY(-2px);
         }
         .status-tile.st-active {
-          background: color-mix(in srgb, var(--st-cor) 8%, white);
+          background: color-mix(in srgb, var(--st-cor) 16%, white);
           border-color: var(--st-cor);
-          box-shadow: 0 0 0 2px color-mix(in srgb, var(--st-cor) 30%, transparent), var(--shadow-sm);
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--st-cor) 35%, transparent), var(--shadow-sm);
           transform: translateY(-2px);
         }
         .st-top { display: flex; align-items: center; justify-content: space-between; }

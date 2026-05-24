@@ -108,28 +108,28 @@ export const PRIORIDADES: Record<Prioridade, string> = {
 };
 
 export const CORES_STATUS: Record<StatusSituacao, string> = {
-  aguardando_retorno_fabrica: '#8b5cf6',
+  aguardando_retorno_fabrica: '#f97316',
   aguardando_retorno_cliente: '#ec4899',
-  aguardando_nf_cliente: '#3b82f6',
-  aguardando_nf_fabrica: '#06b6d4',
-  aguardando_desconto: '#f59e0b',
-  credito_compras_futuras: '#f97316',
-  resolvido_finalizado: '#10b981',
+  aguardando_nf_cliente:      '#a78bfa',
+  aguardando_nf_fabrica:      '#f59e0b',
+  aguardando_desconto:        '#dc2626',
+  credito_compras_futuras:    '#ea580c',
+  resolvido_finalizado:       '#059669',
 };
 
 export const CORES_PRIORIDADE: Record<Prioridade, string> = {
-  baixa: '#6b7280',
-  media: '#3b82f6',
-  alta: '#f59e0b',
+  baixa:   '#94a3b8',
+  media:   '#3b82f6',
+  alta:    '#f97316',
   urgente: '#ef4444',
 };
 
 export const COLUNAS_KANBAN: ColunaKanban[] = [
-  { id: 'aguardando_retorno_fabrica', titulo: 'Aguardando Retorno da Fábrica', cor: '#8b5cf6' },
+  { id: 'aguardando_desconto',        titulo: 'Aguardando Desconto',           cor: '#dc2626' },
+  { id: 'credito_compras_futuras',    titulo: 'Crédito p/ Compras Futuras',    cor: '#ea580c' },
+  { id: 'aguardando_retorno_fabrica', titulo: 'Aguardando Retorno da Fábrica', cor: '#f97316' },
+  { id: 'aguardando_nf_fabrica',      titulo: 'Aguardando NF da Fábrica',      cor: '#f59e0b' },
+  { id: 'aguardando_nf_cliente',      titulo: 'Aguardando NF do Cliente',      cor: '#a78bfa' },
   { id: 'aguardando_retorno_cliente', titulo: 'Aguardando Retorno do Cliente', cor: '#ec4899' },
-  { id: 'aguardando_nf_cliente', titulo: 'Aguardando NF do Cliente', cor: '#3b82f6' },
-  { id: 'aguardando_nf_fabrica', titulo: 'Aguardando NF da Fábrica', cor: '#06b6d4' },
-  { id: 'aguardando_desconto', titulo: 'Aguardando Desconto', cor: '#f59e0b' },
-  { id: 'credito_compras_futuras', titulo: 'Crédito p/ Compras Futuras', cor: '#f97316' },
-  { id: 'resolvido_finalizado', titulo: 'Resolvido/Finalizado', cor: '#10b981' },
+  { id: 'resolvido_finalizado',       titulo: 'Resolvido/Finalizado',          cor: '#059669' },
 ];
