@@ -206,7 +206,8 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
   }, [demandas]);
 
   const obterEstatisticas = useCallback(async () => {
-    const local = {
+    // Sempre calcula localmente com os dados já carregados — evita divergência com backend
+    return {
       total: demandas.length,
       pendentes: demandas.filter(d => d.status !== 'resolvido_finalizado').length,
       resolvidos: demandas.filter(d => d.status === 'resolvido_finalizado').length,
@@ -216,14 +217,7 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
         ? Math.round((demandas.filter(d => d.status === 'resolvido_finalizado').length / demandas.length) * 100)
         : 0,
     };
-    if (modoOffline) return local;
-    try {
-      const response = await fetch(`${API_URL}/api/estatisticas`);
-      return await response.json();
-    } catch {
-      return local;
-    }
-  }, [demandas, modoOffline]);
+  }, [demandas]);
 
   const carregarDemandas = useCallback(async () => {
     if (modoOffline) { setDemandas(carregarDoStorage()); return; }

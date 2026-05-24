@@ -70,7 +70,9 @@ function App() {
 
   const demandasFiltradas = useMemo(() => {
     let resultado = buscarDemandas(busca);
-    if (filtroStatus === 'prioridade:urgente') {
+    if (filtroStatus === 'em_andamento') {
+      resultado = resultado.filter(d => d.status !== 'resolvido_finalizado');
+    } else if (filtroStatus === 'prioridade:urgente') {
       resultado = resultado.filter(d => d.prioridade === 'urgente' || d.prioridade === 'alta');
     } else if (filtroStatus === 'prioridade:alta') {
       resultado = resultado.filter(d => d.prioridade === 'alta');

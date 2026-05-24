@@ -93,9 +93,9 @@ export function Dashboard({
         </div>
 
         <div
-          className={`stat-card stat-pendentes${filtroStatus === 'pendente' ? ' stat-card--active' : ''}`}
-          onClick={() => setFiltroStatus('pendente')}
-          title="Filtrar pendentes"
+          className={`stat-card stat-pendentes${filtroStatus === 'em_andamento' ? ' stat-card--active' : ''}`}
+          onClick={() => setFiltroStatus('em_andamento')}
+          title="Filtrar em andamento"
         >
           <div className="stat-icon-wrap">
             <Clock size={20} />
@@ -108,8 +108,8 @@ export function Dashboard({
         </div>
 
         <div
-          className={`stat-card stat-resolvidos${filtroStatus === 'resolvido' ? ' stat-card--active' : ''}`}
-          onClick={() => setFiltroStatus('resolvido')}
+          className={`stat-card stat-resolvidos${filtroStatus === 'resolvido_finalizado' ? ' stat-card--active' : ''}`}
+          onClick={() => setFiltroStatus('resolvido_finalizado')}
           title="Filtrar resolvidos"
         >
           <div className="stat-icon-wrap">
