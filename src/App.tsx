@@ -144,6 +144,7 @@ function App() {
   return (
     <div className="app">
       <Dashboard
+        demandas={demandas}
         estatisticas={estatisticas}
         busca={busca}
         setBusca={setBusca}
