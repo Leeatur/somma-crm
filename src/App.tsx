@@ -57,6 +57,7 @@ function App() {
     urgentes: 0,
     altaPrioridade: 0,
     taxaResolucao: 0,
+    criticos: 0,
   });
 
   // Carregar estatísticas
@@ -68,10 +69,19 @@ function App() {
     loadStats();
   }, [demandas, obterEstatisticas]);
 
+  const VINTE_DIAS_MS = 20 * 24 * 60 * 60 * 1000;
+
   const demandasFiltradas = useMemo(() => {
     let resultado = buscarDemandas(busca);
     if (filtroStatus === 'em_andamento') {
       resultado = resultado.filter(d => d.status !== 'resolvido_finalizado');
+    } else if (filtroStatus === 'criticos') {
+      const agora = Date.now();
+      resultado = resultado.filter(d => {
+        if (d.status === 'resolvido_finalizado') return false;
+        const rawData = d.dataCriacao || (d as any).createdAt;
+        return rawData ? (agora - new Date(rawData).getTime()) >= VINTE_DIAS_MS : false;
+      });
     } else if (filtroStatus === 'prioridade:urgente') {
       resultado = resultado.filter(d => d.prioridade === 'urgente' || d.prioridade === 'alta');
     } else if (filtroStatus === 'prioridade:alta') {
@@ -80,7 +90,7 @@ function App() {
       resultado = resultado.filter(d => d.status === filtroStatus);
     }
     return resultado;
-  }, [demandas, busca, filtroStatus, buscarDemandas]);
+  }, [demandas, busca, filtroStatus, buscarDemandas, VINTE_DIAS_MS]);
 
   const handleSalvarDemanda = async (dados: Partial<Demanda>) => {
     try {

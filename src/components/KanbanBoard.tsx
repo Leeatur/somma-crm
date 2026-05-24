@@ -23,9 +23,9 @@ const PRIORIDADE_LABEL: Record<string, string> = {
 };
 
 function diasClass(dias: number) {
-  if (dias > 21) return 'kcard-dias--critico';
-  if (dias > 14) return 'kcard-dias--vencido';
-  if (dias > 7)  return 'kcard-dias--alerta';
+  if (dias >= 20) return 'kcard-dias--critico';
+  if (dias > 14)  return 'kcard-dias--vencido';
+  if (dias > 7)   return 'kcard-dias--alerta';
   return '';
 }
 
@@ -39,7 +39,7 @@ function KanbanCard({ demanda, onVerFichario, isOverlay = false }: KanbanCardPro
   const priorCor = CORES_PRIORIDADE[demanda.prioridade] ?? '#94a3b8';
   const isUrgente = demanda.prioridade === 'urgente';
   const isAlta    = demanda.prioridade === 'alta';
-  const isCritico = diasAberto !== null && diasAberto > 21;
+  const isCritico = diasAberto !== null && diasAberto >= 20;
 
   return (
     <div ref={setNodeRef} style={style}

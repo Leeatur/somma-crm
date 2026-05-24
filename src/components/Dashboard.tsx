@@ -1,6 +1,6 @@
 import type { Demanda } from '../types';
 import { COLUNAS_KANBAN } from '../types';
-import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Flame, TrendingUp } from 'lucide-react';
+import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Flame, TrendingUp, Siren } from 'lucide-react';
 
 interface DashboardProps {
   demandas: Demanda[];
@@ -11,6 +11,7 @@ interface DashboardProps {
     urgentes: number;
     altaPrioridade: number;
     taxaResolucao: number;
+    criticos: number;
   };
   busca: string;
   setBusca: (valor: string) => void;
@@ -87,6 +88,22 @@ export function Dashboard({
         </div>
       </div>
 
+      {/* ══ Alerta Crítico — demandas +20 dias ══ */}
+      {estatisticas.criticos > 0 && (
+        <div className="dash-critico-banner" onClick={() => setFiltroStatus('criticos')}>
+          <div className="dash-critico-left">
+            <Siren size={18} className="dash-critico-icon" />
+            <div>
+              <div className="dash-critico-title">ATENÇÃO IMEDIATA NECESSÁRIA</div>
+              <div className="dash-critico-sub">
+                <strong>{estatisticas.criticos}</strong> demanda{estatisticas.criticos > 1 ? 's' : ''} com mais de 20 dias sem resolução — prazo crítico ultrapassado
+              </div>
+            </div>
+          </div>
+          <span className="dash-critico-cta">Ver críticos <AlertTriangle size={13} /></span>
+        </div>
+      )}
+
       {/* ══ Banner de urgência ══ */}
       {estatisticas.pendentes > 0 && (
         <div className="dash-urgency-banner" onClick={() => setFiltroStatus('em_andamento')}>
@@ -101,6 +118,21 @@ export function Dashboard({
 
       {/* ══ Métricas principais ══ */}
       <div className="dash-metrics">
+
+        <div
+          className={`metric-card metric-criticos ${filtroStatus === 'criticos' ? 'mc-active' : ''} ${estatisticas.criticos > 0 ? 'mc-has-criticos' : ''}`}
+          onClick={() => setFiltroStatus(filtroStatus === 'criticos' ? 'todos' : 'criticos')}
+        >
+          <div className="mc-icon mc-icon-critico"><Siren size={22} /></div>
+          <div className="mc-body">
+            <span className="mc-num mc-num-critico">{estatisticas.criticos}</span>
+            <span className="mc-label">Críticos +20 dias</span>
+            <span className="mc-sub mc-sub-critico">
+              {estatisticas.criticos === 0 ? 'Nenhuma demanda crítica ✓' : `${estatisticas.criticos} precisam de ação imediata`}
+            </span>
+          </div>
+          <div className="mc-bar" style={{ background: 'linear-gradient(90deg,#7c2d12,#dc2626)' }} />
+        </div>
 
         <div
           className={`metric-card metric-total ${filtroStatus === 'todos' ? 'mc-active' : ''}`}
@@ -203,6 +235,7 @@ export function Dashboard({
             <Filter size={13} />
             <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}>
               <option value="todos">Todos os Status</option>
+              <option value="criticos">⚠ Críticos +20 dias</option>
               <option value="em_andamento">Em Andamento</option>
               <option value="resolvido_finalizado">Resolvido/Finalizado</option>
               <option value="prioridade:urgente">Urgentes / Alta</option>
@@ -321,6 +354,47 @@ export function Dashboard({
         .dash-btn-nova:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(234,88,12,0.50); animation: none; }
         .dash-btn-nova:active { transform: translateY(0); }
 
+        /* ══ Alerta Crítico ══ */
+        .dash-critico-banner {
+          display: flex; align-items: center; justify-content: space-between; gap: 14px;
+          background: linear-gradient(90deg, #450a0a 0%, #7f1d1d 50%, #991b1b 100%);
+          color: #fef2f2;
+          padding: 13px 20px; border-radius: var(--radius-md);
+          margin-bottom: 10px; cursor: pointer;
+          border: 1px solid rgba(239,68,68,0.4);
+          box-shadow: 0 4px 24px rgba(185,28,28,0.40), 0 0 0 1px rgba(239,68,68,0.2);
+          animation: pulse-critico-banner 2s ease-in-out infinite;
+          transition: var(--transition-smooth);
+        }
+        @keyframes pulse-critico-banner {
+          0%,100% { box-shadow: 0 4px 24px rgba(185,28,28,0.40), 0 0 0 1px rgba(239,68,68,0.2); }
+          50%      { box-shadow: 0 6px 32px rgba(185,28,28,0.60), 0 0 0 2px rgba(239,68,68,0.5); }
+        }
+        .dash-critico-banner:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 36px rgba(185,28,28,0.55), 0 0 0 2px rgba(239,68,68,0.5);
+          animation: none;
+        }
+        .dash-critico-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+        .dash-critico-icon { flex-shrink: 0; animation: siren-spin 1.2s ease-in-out infinite; color: #fca5a5; }
+        @keyframes siren-spin {
+          0%,100% { transform: rotate(-8deg); color: #fca5a5; }
+          50%      { transform: rotate(8deg);  color: #fef2f2; }
+        }
+        .dash-critico-title {
+          font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em;
+          color: #fca5a5; text-transform: uppercase; margin-bottom: 2px;
+        }
+        .dash-critico-sub { font-size: 0.8rem; font-weight: 500; color: #fef2f2; line-height: 1.35; }
+        .dash-critico-cta {
+          display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+          font-size: 0.75rem; font-weight: 700; color: #fca5a5;
+          padding: 6px 14px; background: rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.2); border-radius: 99px;
+          transition: var(--transition-smooth); white-space: nowrap;
+        }
+        .dash-critico-banner:hover .dash-critico-cta { background: rgba(255,255,255,0.22); color: #fff; }
+
         /* ══ Banner de urgência ══ */
         .dash-urgency-banner {
           display: flex; align-items: center; gap: 10px;
@@ -349,7 +423,7 @@ export function Dashboard({
 
         /* ══ Métricas ══ */
         .dash-metrics {
-          display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
+          display: grid; grid-template-columns: repeat(5,1fr); gap: 14px;
           margin-bottom: 16px;
           animation: slideInUp 0.4s ease-out both;
         }
@@ -375,6 +449,26 @@ export function Dashboard({
         @keyframes pulse-urgentes-card {
           0%,100% { box-shadow: var(--shadow-sm); }
           50%      { box-shadow: 0 0 0 2px rgba(220,38,38,0.15), var(--shadow-sm); }
+        }
+
+        /* Card Críticos */
+        .metric-criticos { border-color: rgba(185,28,28,0.2); }
+        .metric-criticos.mc-active { border-color: #991b1b; box-shadow: 0 0 0 2px rgba(185,28,28,0.35), var(--shadow-md); }
+        .metric-criticos.mc-has-criticos {
+          background: linear-gradient(145deg, #fff5f5, #fff);
+          animation: pulse-critico-card 2s ease-in-out infinite;
+        }
+        @keyframes pulse-critico-card {
+          0%,100% { box-shadow: var(--shadow-sm); border-color: rgba(185,28,28,0.25); }
+          50%      { box-shadow: 0 0 0 3px rgba(185,28,28,0.25), var(--shadow-md); border-color: rgba(185,28,28,0.5); }
+        }
+        .mc-icon-critico { background: rgba(185,28,28,0.10); color: #991b1b; }
+        .mc-num-critico { color: #991b1b; }
+        .mc-sub-critico { color: #991b1b; font-weight: 600; font-size: 0.67rem; }
+        .metric-criticos.mc-has-criticos .mc-num-critico { animation: flash-num 2s ease-in-out infinite; }
+        @keyframes flash-num {
+          0%,100% { opacity: 1; }
+          50%      { opacity: 0.65; }
         }
 
         /* Barra de cor no topo */
@@ -514,9 +608,12 @@ export function Dashboard({
         @media (max-width: 1280px) {
           .dash-status-grid { grid-template-columns: repeat(4,1fr); }
         }
+        @media (max-width: 1400px) {
+          .dash-metrics { grid-template-columns: repeat(3,1fr); }
+        }
         @media (max-width: 1100px) {
           .dash { padding: 18px 20px 0; }
-          .dash-metrics { grid-template-columns: repeat(2,1fr); }
+          .dash-metrics { grid-template-columns: repeat(3,1fr); }
           .dash-status-grid { grid-template-columns: repeat(4,1fr); }
         }
         @media (max-width: 768px) {

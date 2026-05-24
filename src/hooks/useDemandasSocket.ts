@@ -206,16 +206,23 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
   }, [demandas]);
 
   const obterEstatisticas = useCallback(async () => {
-    // Sempre calcula localmente com os dados já carregados — evita divergência com backend
+    const VINTE_DIAS_MS = 20 * 24 * 60 * 60 * 1000;
+    const agora = Date.now();
+    const pendentes = demandas.filter(d => d.status !== 'resolvido_finalizado');
+    const criticos = pendentes.filter(d => {
+      const rawData = d.dataCriacao || (d as any).createdAt;
+      return rawData ? (agora - new Date(rawData).getTime()) >= VINTE_DIAS_MS : false;
+    });
     return {
       total: demandas.length,
-      pendentes: demandas.filter(d => d.status !== 'resolvido_finalizado').length,
+      pendentes: pendentes.length,
       resolvidos: demandas.filter(d => d.status === 'resolvido_finalizado').length,
       urgentes: demandas.filter(d => d.prioridade === 'urgente').length,
       altaPrioridade: demandas.filter(d => d.prioridade === 'alta').length,
       taxaResolucao: demandas.length > 0
         ? Math.round((demandas.filter(d => d.status === 'resolvido_finalizado').length / demandas.length) * 100)
         : 0,
+      criticos: criticos.length,
     };
   }, [demandas]);
 
