@@ -125,11 +125,11 @@ export const CORES_PRIORIDADE: Record<Prioridade, string> = {
 };
 
 export const COLUNAS_KANBAN: ColunaKanban[] = [
+  { id: 'aguardando_retorno_fabrica', titulo: 'Aguardando Retorno da Fábrica', cor: '#f97316' },
+  { id: 'aguardando_retorno_cliente', titulo: 'Aguardando Retorno do Cliente', cor: '#ec4899' },
+  { id: 'aguardando_nf_cliente',      titulo: 'Aguardando NF do Cliente',      cor: '#a78bfa' },
+  { id: 'aguardando_nf_fabrica',      titulo: 'Aguardando NF da Fábrica',      cor: '#f59e0b' },
   { id: 'aguardando_desconto',        titulo: 'Aguardando Desconto',           cor: '#dc2626' },
   { id: 'credito_compras_futuras',    titulo: 'Crédito p/ Compras Futuras',    cor: '#ea580c' },
-  { id: 'aguardando_retorno_fabrica', titulo: 'Aguardando Retorno da Fábrica', cor: '#f97316' },
-  { id: 'aguardando_nf_fabrica',      titulo: 'Aguardando NF da Fábrica',      cor: '#f59e0b' },
-  { id: 'aguardando_nf_cliente',      titulo: 'Aguardando NF do Cliente',      cor: '#a78bfa' },
-  { id: 'aguardando_retorno_cliente', titulo: 'Aguardando Retorno do Cliente', cor: '#ec4899' },
   { id: 'resolvido_finalizado',       titulo: 'Resolvido/Finalizado',          cor: '#059669' },
 ];
