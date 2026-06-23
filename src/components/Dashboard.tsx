@@ -1,6 +1,6 @@
 import type { Demanda } from '../types';
 import { COLUNAS_KANBAN } from '../types';
-import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Flame, TrendingUp, Siren } from 'lucide-react';
+import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Siren } from 'lucide-react';
 
 interface DashboardProps {
   demandas: Demanda[];
@@ -87,34 +87,6 @@ export function Dashboard({
           </button>
         </div>
       </div>
-
-      {/* ══ Alerta Crítico — demandas +20 dias ══ */}
-      {estatisticas.criticos > 0 && (
-        <div className="dash-critico-banner" onClick={() => setFiltroStatus('criticos')}>
-          <div className="dash-critico-left">
-            <Siren size={18} className="dash-critico-icon" />
-            <div>
-              <div className="dash-critico-title">ATENÇÃO IMEDIATA NECESSÁRIA</div>
-              <div className="dash-critico-sub">
-                <strong>{estatisticas.criticos}</strong> demanda{estatisticas.criticos > 1 ? 's' : ''} com mais de 20 dias sem resolução — prazo crítico ultrapassado
-              </div>
-            </div>
-          </div>
-          <span className="dash-critico-cta">Ver críticos <AlertTriangle size={13} /></span>
-        </div>
-      )}
-
-      {/* ══ Banner de urgência ══ */}
-      {estatisticas.pendentes > 0 && (
-        <div className="dash-urgency-banner" onClick={() => setFiltroStatus('em_andamento')}>
-          <Flame size={14} className="dash-urgency-icon" />
-          <span>
-            <strong>{estatisticas.pendentes}</strong> demanda{estatisticas.pendentes > 1 ? 's' : ''} aguardam resolução
-            {estatisticas.urgentes > 0 && <> · <strong style={{color:'#fca5a5'}}>{estatisticas.urgentes} urgente{estatisticas.urgentes > 1 ? 's' : ''}</strong></>}
-          </span>
-          <span className="dash-urgency-cta">Ver todas <TrendingUp size={11} /></span>
-        </div>
-      )}
 
       {/* ══ Métricas principais ══ */}
       <div className="dash-metrics">
@@ -259,11 +231,18 @@ export function Dashboard({
       </div>
 
       <style>{`
-        /* ══ Dashboard wrapper ══ */
+        /* ══ Dashboard wrapper — faixa azul escuro (igual login) ══ */
         .dash {
-          padding: 22px 32px 0;
-          max-width: 1900px;
-          margin: 0 auto;
+          padding: 22px 32px 26px;
+          margin: 0 0 22px;
+          background: linear-gradient(150deg, var(--color-primary) 0%, #0d1a2e 45%, var(--color-accent) 100%);
+          border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+          box-shadow: var(--shadow-lg);
+          /* Destaques (logo, botões, foco, toggles) em LARANJA dentro do cabeçalho */
+          --color-gold:      #f97316;
+          --color-gold-light:#fb923c;
+          --color-gold-dim:  rgba(249,115,22,0.20);
+          --color-gold-deep: #c2410c;
         }
 
         /* ══ Top Bar ══ */
@@ -275,18 +254,17 @@ export function Dashboard({
         .dash-brand { display: flex; align-items: center; gap: 14px; }
         .dash-emblem {
           width: 50px; height: 50px; border-radius: 14px; flex-shrink: 0;
-          background: linear-gradient(145deg, var(--color-gold) 0%, #a87820 100%);
+          background: linear-gradient(145deg, #f97316 0%, #c2410c 100%);
           display: flex; align-items: center; justify-content: center;
           font-family: var(--font-display); font-size: 1.7rem; font-weight: 800;
-          color: var(--color-primary);
-          box-shadow: 0 4px 20px rgba(201,162,39,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
-          animation: pulse-ring 3s ease-in-out infinite;
+          color: #fff;
+          box-shadow: 0 4px 20px rgba(249,115,22,0.40), inset 0 1px 0 rgba(255,255,255,0.25);
         }
         .dash-title {
           font-family: var(--font-display); font-size: 1.75rem; font-weight: 700;
-          color: var(--color-primary); letter-spacing: 0.1em; line-height: 1; margin: 0;
+          color: #fff; letter-spacing: 0.1em; line-height: 1; margin: 0;
         }
-        .dash-sub { font-size: 0.8rem; color: var(--color-text-light); margin: 3px 0 0; }
+        .dash-sub { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin: 3px 0 0; }
 
         .dash-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
@@ -312,15 +290,16 @@ export function Dashboard({
         .dash-user-btn {
           display: flex; align-items: center; gap: 8px;
           padding: 6px 13px 6px 6px;
-          background: var(--color-primary);
-          color: var(--color-white); border: none; border-radius: 20px;
+          background: rgba(255,255,255,0.10);
+          color: var(--color-white); border: 1px solid rgba(255,255,255,0.22); border-radius: 20px;
           font-size: 0.75rem; font-weight: 600; cursor: pointer;
           transition: var(--transition-smooth);
         }
-        .dash-user-btn:hover { background: var(--color-highlight); }
+        .dash-user-btn:hover { background: rgba(255,255,255,0.20); }
         .dash-user-avatar {
-          width: 26px; height: 26px; border-radius: 50%; background: var(--color-gold);
-          color: var(--color-primary); display: flex; align-items: center; justify-content: center;
+          width: 26px; height: 26px; border-radius: 50%;
+          background: linear-gradient(145deg, #f97316 0%, #c2410c 100%);
+          color: #fff; display: flex; align-items: center; justify-content: center;
           font-weight: 800; font-size: 0.75rem; flex-shrink: 0;
         }
         .dash-user-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
