@@ -124,6 +124,35 @@ function App() {
     setDemandaFichario(demanda);
   };
 
+  const handleDuplicar = async (demanda: Demanda) => {
+    try {
+      const copia: Partial<Demanda> = {
+        nomeCliente: `${demanda.nomeCliente} (CÓPIA)`,
+        cnpj: demanda.cnpj,
+        razaoSocial: demanda.razaoSocial,
+        fantasia: demanda.fantasia,
+        contato: demanda.contato,
+        cidade: demanda.cidade,
+        representante: demanda.representante,
+        marca: demanda.marca,
+        valor: demanda.valor,
+        dataContato: demanda.dataContato,
+        tipoProblema: demanda.tipoProblema,
+        encaminhadoPara: demanda.encaminhadoPara,
+        status: demanda.status,
+        prioridade: demanda.prioridade,
+        observacoes: demanda.observacoes,
+        historicoObservacoes: demanda.historicoObservacoes,
+        numeroNFDevolucao: demanda.numeroNFDevolucao,
+        dataRecebimentoNF: demanda.dataRecebimentoNF,
+      };
+      await adicionarDemanda(copia as Omit<Demanda, 'id' | 'dataCriacao' | 'dataAtualizacao'>);
+      setDemandaFichario(null);
+    } catch {
+      alert('Erro ao duplicar demanda. Tente novamente.');
+    }
+  };
+
   const handleLogin = (novoToken: string, novoUsuario: AuthUser) => {
     localStorage.setItem(TOKEN_KEY, novoToken);
     localStorage.setItem(USUARIO_KEY, JSON.stringify(novoUsuario));
@@ -200,6 +229,7 @@ function App() {
           demanda={demandaFichario}
           onFechar={() => setDemandaFichario(null)}
           onEditar={handleEditar}
+          onDuplicar={handleDuplicar}
           onExcluir={excluirDemanda}
         />
       )}

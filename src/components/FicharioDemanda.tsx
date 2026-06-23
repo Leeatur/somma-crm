@@ -1,6 +1,6 @@
 import type { Demanda } from '../types';
 import { STATUS_SITUACAO, CORES_STATUS } from '../types';
-import { X, User, Building2, Phone, DollarSign, CalendarDays, FileText, Hash, Edit2, Trash2, MapPin } from 'lucide-react';
+import { X, User, Building2, Phone, DollarSign, CalendarDays, FileText, Hash, Edit2, Copy, Trash2, MapPin } from 'lucide-react';
 
 interface EntradaHistorico {
   id: string;
@@ -15,6 +15,7 @@ interface FicharioDemandaProps {
   demanda: Demanda;
   onFechar: () => void;
   onEditar?: (demanda: Demanda) => void;
+  onDuplicar?: (demanda: Demanda) => void;
   onExcluir?: (id: string) => void;
 }
 
@@ -33,7 +34,7 @@ function formatDate(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
-export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: FicharioDemandaProps) {
+export function FicharioDemanda({ demanda, onFechar, onEditar, onDuplicar, onExcluir }: FicharioDemandaProps) {
   const historico: EntradaHistorico[] = demanda.historicoObservacoes?.length
     ? (demanda.historicoObservacoes as unknown as EntradaHistorico[])
     : parseHistorico(demanda.observacoes);
@@ -71,6 +72,13 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: Fich
             {onEditar && (
               <button className="fich-btn-edit" onClick={() => { onEditar(demanda); onFechar(); }}>
                 <Edit2 size={15} /> Editar
+              </button>
+            )}
+            {onDuplicar && (
+              <button className="fich-btn-dup" title="Duplicar demanda" onClick={() => {
+                if (confirm('Duplicar esta demanda? Será criada uma cópia com todos os dados.')) onDuplicar(demanda);
+              }}>
+                <Copy size={15} /> Duplicar
               </button>
             )}
             {onExcluir && (
@@ -244,6 +252,16 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onExcluir }: Fich
           cursor: pointer; transition: var(--transition-smooth);
         }
         .fich-btn-edit:hover { background: #e6b820; }
+        .fich-btn-dup {
+          display: flex; align-items: center; gap: 6px;
+          padding: 8px 16px;
+          background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.85);
+          border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sm);
+          font-size: 0.8rem; font-weight: 700;
+          cursor: pointer; transition: var(--transition-smooth);
+        }
+        .fich-btn-dup:hover { background: rgba(255,255,255,0.18); color: #fff; }
         .fich-btn-delete {
           display: flex; align-items: center; justify-content: center;
           width: 36px; height: 36px;

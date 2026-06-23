@@ -37,10 +37,23 @@ function parseHistorico(obs: string | undefined): EntradaHistorico[] {
   return [];
 }
 
+// Converte qualquer data (ISO ou já YYYY-MM-DD) para o formato do <input type="date">
+function toDateInput(iso?: string): string {
+  if (!iso) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dia}`;
+}
+
 export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }: ModalDemandaProps) {
   const [formData, setFormData] = useState<Partial<Demanda>>({
     nomeCliente: demanda?.nomeCliente || '',
     cnpj: demanda?.cnpj || '',
+    dataCriacao: toDateInput(demanda?.dataCriacao || demanda?.createdAt) || new Date().toISOString().split('T')[0],
     status: demanda?.status || 'aguardando_retorno_fabrica',
     contato: demanda?.contato || '',
     cidade: demanda?.cidade || '',
@@ -86,6 +99,10 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
       dataContato: formData.dataContato || new Date().toISOString().split('T')[0],
       tipoProblema: formData.tipoProblema || 'outros',
       prioridade: formData.prioridade || 'media',
+      // "Aberto em": converte YYYY-MM-DD → ISO (meio-dia local evita deslocar o dia por fuso)
+      dataCriacao: formData.dataCriacao
+        ? new Date(`${formData.dataCriacao}T12:00:00`).toISOString()
+        : undefined,
     };
     onSalvar(dadosParaSalvar);
     onFechar();
@@ -172,6 +189,15 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
                 placeholder="00.000.000/0000-00"
                 inputMode="numeric"
                 maxLength={18}
+              />
+            </div>
+
+            <div className="form-group">
+              <label><CalendarDays size={16} />Aberto em</label>
+              <input
+                type="date"
+                value={formData.dataCriacao || ''}
+                onChange={e => setFormData(prev => ({ ...prev, dataCriacao: e.target.value }))}
               />
             </div>
 
