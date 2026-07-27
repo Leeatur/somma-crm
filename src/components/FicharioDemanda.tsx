@@ -1,6 +1,6 @@
-import type { Demanda } from '../types';
-import { STATUS_SITUACAO, CORES_STATUS } from '../types';
-import { X, User, Building2, Phone, DollarSign, CalendarDays, FileText, Hash, Edit2, Copy, Trash2, MapPin } from 'lucide-react';
+import type { Demanda, ColunaDef, CampoDef } from '../types';
+import { STATUS_SITUACAO, CORES_STATUS, CORE_FIELD_KEYS } from '../types';
+import { X, User, Building2, Phone, DollarSign, CalendarDays, FileText, Hash, Edit2, Copy, Trash2, MapPin, Tag } from 'lucide-react';
 
 interface EntradaHistorico {
   id: string;
@@ -13,6 +13,8 @@ interface EntradaHistorico {
 
 interface FicharioDemandaProps {
   demanda: Demanda;
+  colunas: ColunaDef[];
+  campos: CampoDef[];
   onFechar: () => void;
   onEditar?: (demanda: Demanda) => void;
   onDuplicar?: (demanda: Demanda) => void;
@@ -34,16 +36,44 @@ function formatDate(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
-export function FicharioDemanda({ demanda, onFechar, onEditar, onDuplicar, onExcluir }: FicharioDemandaProps) {
+export function FicharioDemanda({ demanda, colunas, campos, onFechar, onEditar, onDuplicar, onExcluir }: FicharioDemandaProps) {
   const historico: EntradaHistorico[] = demanda.historicoObservacoes?.length
     ? (demanda.historicoObservacoes as unknown as EntradaHistorico[])
     : parseHistorico(demanda.observacoes);
 
-  const statusCor = CORES_STATUS[demanda.status];
+  const colAtual = colunas.find(c => c.id === demanda.status);
+  const statusCor = colAtual?.cor || CORES_STATUS[demanda.status] || '#64748b';
+  const statusLabel = colAtual?.titulo || STATUS_SITUACAO[demanda.status] || demanda.status;
   const rawData = demanda.dataCriacao || demanda.createdAt || demanda.updatedAt;
   const dataCriacao = rawData
     ? new Date(rawData).toLocaleDateString('pt-BR')
     : '—';
+
+  const isCore = (key: string) => CORE_FIELD_KEYS.includes(key);
+  const iconeCampo = (key: string) => {
+    switch (key) {
+      case 'nomeCliente': case 'razaoSocial': case 'representante': return <User size={12} />;
+      case 'cnpj': case 'marca': return <Building2 size={12} />;
+      case 'contato': return <Phone size={12} />;
+      case 'cidade': return <MapPin size={12} />;
+      case 'valor': return <DollarSign size={12} />;
+      case 'dataCriacao': return <CalendarDays size={12} />;
+      default: return <Tag size={12} />;
+    }
+  };
+  const valorCampo = (campo: CampoDef): string => {
+    if (campo.key === 'dataCriacao') return dataCriacao;
+    const raw = isCore(campo.key)
+      ? (demanda as any)[campo.key]
+      : ((demanda as any).camposCustom || {})[campo.key];
+    if (raw === undefined || raw === null || raw === '') return '—';
+    if (campo.tipo === 'data') return formatDate(String(raw));
+    if (campo.tipo === 'moeda' || campo.key === 'valor') return `R$ ${raw}`;
+    return String(raw);
+  };
+  const camposAtivos = campos
+    .filter(c => c.ativo !== false)
+    .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
   return (
     <div className="fich-overlay" onClick={onFechar}>
@@ -63,7 +93,7 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onDuplicar, onExc
                 className="fich-status-badge"
                 style={{ background: `${statusCor}22`, color: statusCor, borderColor: `${statusCor}55` }}
               >
-                {STATUS_SITUACAO[demanda.status]}
+                {statusLabel}
               </span>
             </div>
           </div>
@@ -99,42 +129,14 @@ export function FicharioDemanda({ demanda, onFechar, onEditar, onDuplicar, onExc
           <section className="fich-section">
             <h3 className="fich-section-title">Dados do Cliente</h3>
             <div className="fich-grid">
-              <div className="fich-field">
-                <span className="fich-field-label"><User size={12} />Cliente</span>
-                <span className="fich-field-value">{demanda.nomeCliente || '—'}</span>
-              </div>
-              <div className="fich-field">
-                <span className="fich-field-label"><Building2 size={12} />CNPJ</span>
-                <span className="fich-field-value">{demanda.cnpj || '—'}</span>
-              </div>
-              <div className="fich-field">
-                <span className="fich-field-label"><CalendarDays size={12} />Aberto em</span>
-                <span className="fich-field-value">{dataCriacao}</span>
-              </div>
-              <div className="fich-field">
-                <span className="fich-field-label"><User size={12} />Nome do Contato</span>
-                <span className="fich-field-value">{demanda.razaoSocial || '—'}</span>
-              </div>
-              <div className="fich-field">
-                <span className="fich-field-label"><Phone size={12} />Contato</span>
-                <span className="fich-field-value">{demanda.contato || '—'}</span>
-              </div>
-              <div className="fich-field">
-                <span className="fich-field-label"><MapPin size={12} />Cidade</span>
-                <span className="fich-field-value">{demanda.cidade || '—'}</span>
-              </div>
-              <div className="fich-field">
-                <span className="fich-field-label"><Building2 size={12} />Marca</span>
-                <span className="fich-field-value">{demanda.marca || '—'}</span>
-              </div>
-              <div className="fich-field">
-                <span className="fich-field-label"><User size={12} />Representante</span>
-                <span className="fich-field-value">{(demanda as any).representante || '—'}</span>
-              </div>
-              <div className="fich-field">
-                <span className="fich-field-label"><DollarSign size={12} />Valor Total</span>
-                <span className="fich-field-value fich-valor">{demanda.valor ? `R$ ${demanda.valor}` : '—'}</span>
-              </div>
+              {camposAtivos.map(campo => (
+                <div className="fich-field" key={campo.key}>
+                  <span className="fich-field-label">{iconeCampo(campo.key)}{campo.label}</span>
+                  <span className={`fich-field-value ${campo.tipo === 'moeda' || campo.key === 'valor' ? 'fich-valor' : ''}`}>
+                    {valorCampo(campo)}
+                  </span>
+                </div>
+              ))}
             </div>
           </section>
 

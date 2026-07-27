@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import type { Demanda } from '../types';
-import { STATUS_SITUACAO } from '../types';
+import type { Demanda, ColunaDef, CampoDef } from '../types';
+import { CORE_FIELD_KEYS } from '../types';
 import { X, User, Building2, Phone, DollarSign, Package, CheckCircle2, Plus, Trash2, CalendarDays, Tag, FileText, MapPin, Hash } from 'lucide-react';
 
 interface EntradaHistorico {
@@ -14,6 +14,8 @@ interface EntradaHistorico {
 
 interface ModalDemandaProps {
   demanda?: Demanda | null;
+  colunas: ColunaDef[];
+  campos: CampoDef[];
   onSalvar: (demanda: Partial<Demanda>) => void;
   onFechar: () => void;
   isEditando?: boolean;
@@ -49,12 +51,12 @@ function toDateInput(iso?: string): string {
   return `${y}-${m}-${dia}`;
 }
 
-export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }: ModalDemandaProps) {
+export function ModalDemanda({ demanda, colunas, campos, onSalvar, onFechar, isEditando = false }: ModalDemandaProps) {
   const [formData, setFormData] = useState<Partial<Demanda>>({
     nomeCliente: demanda?.nomeCliente || '',
     cnpj: demanda?.cnpj || '',
     dataCriacao: toDateInput(demanda?.dataCriacao || demanda?.createdAt) || new Date().toISOString().split('T')[0],
-    status: demanda?.status || 'aguardando_retorno_fabrica',
+    status: (demanda?.status || colunas[0]?.id || 'aguardando_retorno_fabrica') as Demanda['status'],
     contato: demanda?.contato || '',
     cidade: demanda?.cidade || '',
     razaoSocial: demanda?.razaoSocial || '',
@@ -69,7 +71,24 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
     tipoProblema: demanda?.tipoProblema || 'outros',
     encaminhadoPara: demanda?.encaminhadoPara || '',
     prioridade: demanda?.prioridade || 'media',
+    camposCustom: (demanda as any)?.camposCustom || {},
   });
+
+  // Valor de um campo (do topo do objeto se for campo do sistema, senão de camposCustom)
+  const isCore = (key: string) => CORE_FIELD_KEYS.includes(key);
+  const getVal = (campo: CampoDef): string => {
+    const raw = isCore(campo.key)
+      ? (formData as any)[campo.key]
+      : ((formData.camposCustom as any) || {})[campo.key];
+    return raw ?? '';
+  };
+  const setVal = (campo: CampoDef, value: string) => {
+    if (isCore(campo.key)) {
+      setFormData(prev => ({ ...prev, [campo.key]: value }));
+    } else {
+      setFormData(prev => ({ ...prev, camposCustom: { ...((prev.camposCustom as any) || {}), [campo.key]: value } }));
+    }
+  };
 
   const [novaEntrada, setNovaEntrada] = useState<EntradaHistorico>(entradaVazia());
   const [adicionando, setAdicionando] = useState(false);
@@ -149,6 +168,54 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
     return `${d}/${m}/${y}`;
   };
 
+  const iconeCampo = (key: string) => {
+    switch (key) {
+      case 'nomeCliente': case 'razaoSocial': case 'representante': return <User size={16} />;
+      case 'cnpj': case 'marca': return <Building2 size={16} />;
+      case 'contato': return <Phone size={16} />;
+      case 'cidade': return <MapPin size={16} />;
+      case 'valor': return <DollarSign size={16} />;
+      case 'dataCriacao': return <CalendarDays size={16} />;
+      default: return <Tag size={16} />;
+    }
+  };
+
+  const renderCampo = (campo: CampoDef) => {
+    const val = getVal(campo);
+    const req = !!campo.obrigatorio;
+    let input;
+    if (campo.tipo === 'selecao') {
+      input = (
+        <select value={val} onChange={e => setVal(campo, e.target.value)} required={req}>
+          <option value="">Selecione…</option>
+          {(campo.opcoes || []).map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      );
+    } else if (campo.tipo === 'data') {
+      input = <input type="date" value={val} onChange={e => setVal(campo, e.target.value)} required={req} />;
+    } else if (campo.tipo === 'moeda' || campo.key === 'valor') {
+      input = <input type="text" value={val} onChange={e => setVal(campo, e.target.value.replace(/[^\d,]/g, ''))} placeholder="0,00" inputMode="decimal" required={req} />;
+    } else if (campo.tipo === 'numero') {
+      input = <input type="text" value={val} onChange={e => setVal(campo, e.target.value.replace(/[^\d]/g, ''))} placeholder="0" inputMode="numeric" required={req} />;
+    } else if (campo.key === 'cnpj') {
+      input = <input type="text" value={val} onChange={e => setVal(campo, formatCnpj(e.target.value))} placeholder="00.000.000/0000-00" inputMode="numeric" maxLength={18} required={req} />;
+    } else if (campo.key === 'contato') {
+      input = <input type="text" value={val} onChange={e => setVal(campo, formatPhone(e.target.value))} placeholder="(00) 00000-0000" inputMode="numeric" maxLength={16} required={req} />;
+    } else {
+      input = <input type="text" value={val} onChange={e => setVal(campo, e.target.value)} placeholder={campo.label} required={req} />;
+    }
+    return (
+      <div className="form-group" key={campo.key}>
+        <label>{iconeCampo(campo.key)}{campo.label}{req ? ' *' : ''}</label>
+        {input}
+      </div>
+    );
+  };
+
+  const camposAtivos = campos
+    .filter(c => c.ativo !== false)
+    .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+
   return (
     <div className="modal-overlay" onClick={onFechar}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -169,114 +236,22 @@ export function ModalDemanda({ demanda, onSalvar, onFechar, isEditando = false }
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-grid">
+            {/* Status é sempre exibido (define a coluna no kanban) */}
             <div className="form-group">
-              <label><User size={16} />Cliente *</label>
-              <input
-                type="text"
-                value={formData.nomeCliente}
-                onChange={e => setFormData(prev => ({ ...prev, nomeCliente: e.target.value }))}
-                placeholder="Nome do cliente"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label><Building2 size={16} />CNPJ</label>
-              <input
-                type="text"
-                value={formData.cnpj}
-                onChange={e => setFormData(prev => ({ ...prev, cnpj: formatCnpj(e.target.value) }))}
-                placeholder="00.000.000/0000-00"
-                inputMode="numeric"
-                maxLength={18}
-              />
-            </div>
-
-            <div className="form-group">
-              <label><CalendarDays size={16} />Aberto em</label>
-              <input
-                type="date"
-                value={formData.dataCriacao || ''}
-                onChange={e => setFormData(prev => ({ ...prev, dataCriacao: e.target.value }))}
-              />
-            </div>
-
-            <div className="form-group">
-              <label><User size={16} />Representante</label>
-              <input
-                type="text"
-                value={formData.representante}
-                onChange={e => setFormData(prev => ({ ...prev, representante: e.target.value }))}
-                placeholder="Nome do representante"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Status *</label>
+              <label><Tag size={16} />Status *</label>
               <select
                 value={formData.status}
                 onChange={e => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
                 required
               >
-                {Object.entries(STATUS_SITUACAO).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                {colunas.map(col => (
+                  <option key={col.id} value={col.id}>{col.titulo}</option>
                 ))}
               </select>
             </div>
 
-            <div className="form-group">
-              <label><Phone size={16} />Contato (Telefone)</label>
-              <input
-                type="text"
-                value={formData.contato}
-                onChange={e => setFormData(prev => ({ ...prev, contato: formatPhone(e.target.value) }))}
-                placeholder="(00) 00000-0000"
-                inputMode="numeric"
-                maxLength={16}
-              />
-            </div>
-
-            <div className="form-group">
-              <label><MapPin size={16} />Cidade</label>
-              <input
-                type="text"
-                value={formData.cidade}
-                onChange={e => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
-                placeholder="Cidade do cliente"
-              />
-            </div>
-
-            <div className="form-group">
-              <label><User size={16} />Nome do Contato</label>
-              <input
-                type="text"
-                value={formData.razaoSocial}
-                onChange={e => setFormData(prev => ({ ...prev, razaoSocial: e.target.value }))}
-                placeholder="Nome da pessoa de contato"
-              />
-            </div>
-
-            <div className="form-group">
-              <label><Building2 size={16} />Marca *</label>
-              <input
-                type="text"
-                value={formData.marca}
-                onChange={e => setFormData(prev => ({ ...prev, marca: e.target.value }))}
-                placeholder="Digite a marca"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label><DollarSign size={16} />Valor Total</label>
-              <input
-                type="text"
-                value={formData.valor || ''}
-                onChange={e => setFormData(prev => ({ ...prev, valor: e.target.value.replace(/[^\d,]/g, '') }))}
-                placeholder="Calculado pelo histórico"
-                inputMode="decimal"
-              />
-            </div>
+            {/* Campos configuráveis por empresa */}
+            {camposAtivos.map(renderCampo)}
           </div>
 
           {/* Histórico de Observações */}

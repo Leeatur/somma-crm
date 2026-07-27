@@ -1,6 +1,5 @@
-import type { Demanda } from '../types';
-import { COLUNAS_KANBAN } from '../types';
-import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Siren } from 'lucide-react';
+import type { Demanda, ColunaDef } from '../types';
+import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Siren, Settings2 } from 'lucide-react';
 
 interface DashboardProps {
   demandas: Demanda[];
@@ -13,6 +12,7 @@ interface DashboardProps {
     taxaResolucao: number;
     criticos: number;
   };
+  colunas: ColunaDef[];
   busca: string;
   setBusca: (valor: string) => void;
   filtroStatus: string;
@@ -21,6 +21,7 @@ interface DashboardProps {
   setVisualizacao: (tipo: 'kanban' | 'lista') => void;
   onNovaDemanda: () => void;
   onRelatorio: () => void;
+  onConfig: () => void;
   nomeUsuario: string;
   statusConexao: 'conectando' | 'online' | 'offline';
   onLogout: () => void;
@@ -29,6 +30,7 @@ interface DashboardProps {
 export function Dashboard({
   demandas,
   estatisticas,
+  colunas,
   busca,
   setBusca,
   filtroStatus,
@@ -37,13 +39,14 @@ export function Dashboard({
   setVisualizacao,
   onNovaDemanda,
   onRelatorio,
+  onConfig,
   nomeUsuario,
   statusConexao,
   onLogout,
 }: DashboardProps) {
 
   // Conta por status diretamente dos dados
-  const porStatus = COLUNAS_KANBAN.map(col => ({
+  const porStatus = colunas.map(col => ({
     ...col,
     count: demandas.filter(d => d.status === col.id).length,
   }));
@@ -75,6 +78,10 @@ export function Dashboard({
             <span className="dash-user-avatar">{nomeUsuario.charAt(0).toUpperCase()}</span>
             <span className="dash-user-name">{nomeUsuario}</span>
             <LogOut size={13} style={{ opacity: 0.6, marginLeft: 2 }} />
+          </button>
+
+          <button className="dash-btn-rel" onClick={onConfig} title="Configurar colunas do kanban">
+            <Settings2 size={15} /> Configurar
           </button>
 
           <button className="dash-btn-rel" onClick={onRelatorio}>
@@ -212,7 +219,7 @@ export function Dashboard({
               <option value="resolvido_finalizado">Resolvido/Finalizado</option>
               <option value="prioridade:urgente">Urgentes / Alta</option>
               <optgroup label="─ Por Status ─">
-                {COLUNAS_KANBAN.map(col => (
+                {colunas.map(col => (
                   <option key={col.id} value={col.id}>{col.titulo}</option>
                 ))}
               </optgroup>

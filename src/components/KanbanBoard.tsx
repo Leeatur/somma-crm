@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Demanda } from '../types';
-import { COLUNAS_KANBAN, CORES_PRIORIDADE } from '../types';
+import type { Demanda, ColunaDef } from '../types';
+import { CORES_PRIORIDADE } from '../types';
 import { Clock, Building2, User, GripVertical, Flame } from 'lucide-react';
 
 interface KanbanBoardProps {
   demandas: Demanda[];
+  colunas: ColunaDef[];
   onMoverDemanda: (id: string, novoStatus: Demanda['status']) => void;
   onVerFichario: (demanda: Demanda) => void;
 }
@@ -80,7 +81,7 @@ function KanbanCard({ demanda, onVerFichario, isOverlay = false }: KanbanCardPro
 
 const STATUS_RESOLVIDO = 'resolvido_finalizado';
 
-export function KanbanBoard({ demandas, onMoverDemanda, onVerFichario }: KanbanBoardProps) {
+export function KanbanBoard({ demandas, colunas, onMoverDemanda, onVerFichario }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -91,7 +92,7 @@ export function KanbanBoard({ demandas, onMoverDemanda, onVerFichario }: KanbanB
     const { active, over } = e;
     setActiveId(null);
     if (!over) return;
-    if (COLUNAS_KANBAN.some(c => c.id === (over.id as string)))
+    if (colunas.some(c => c.id === (over.id as string)))
       onMoverDemanda(active.id as string, over.id as Demanda['status']);
   };
   const activeDemanda = activeId ? demandas.find(d => (d._id || d.id) === activeId) : null;
@@ -99,7 +100,7 @@ export function KanbanBoard({ demandas, onMoverDemanda, onVerFichario }: KanbanB
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="kboard">
-        {COLUNAS_KANBAN.map((col, idx) => {
+        {colunas.map((col, idx) => {
           const lista = demandas.filter(d => d.status === col.id);
           const isResolvido = col.id === STATUS_RESOLVIDO;
           return (
@@ -138,10 +139,12 @@ export function KanbanBoard({ demandas, onMoverDemanda, onVerFichario }: KanbanB
       <style>{`
         .kboard {
           display: grid;
-          grid-template-columns: repeat(7, 1fr);
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(230px, 1fr);
           gap: 10px;
           padding: 2px 2px 28px;
           align-items: start;
+          overflow-x: auto;
         }
 
         /* ── Coluna base ── */
@@ -314,9 +317,7 @@ export function KanbanBoard({ demandas, onMoverDemanda, onVerFichario }: KanbanB
         .kcard-tag--rep   { background: #f5f3ff; color: #6d28d9; }
         .kcard-tag--valor { background: #f0fdf4; color: #15803d; font-weight: 700; }
 
-        @media (max-width: 1100px) { .kboard { grid-template-columns: repeat(4,1fr); } }
-        @media (max-width: 768px)  { .kboard { grid-template-columns: repeat(2,1fr); } }
-        @media (max-width: 480px)  { .kboard { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .kboard { grid-auto-columns: minmax(200px, 1fr); } }
       `}</style>
     </DndContext>
   );

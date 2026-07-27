@@ -1,16 +1,21 @@
-import { useState, useEffect, useMemo } from 'react';
-import type { Demanda, AuthUser } from './types';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import type { Demanda, AuthUser, EmpresaConfig, ColunaDef, CampoDef } from './types';
+import { COLUNAS_KANBAN, CAMPOS_PADRAO } from './types';
 import { useDemandasSocket } from './hooks/useDemandasSocket';
 import { Dashboard } from './components/Dashboard';
 import { KanbanBoard } from './components/KanbanBoard';
 import { ListaDemandas } from './components/ListaDemandas';
 import { ModalDemanda } from './components/ModalDemanda';
 import { FicharioDemanda } from './components/FicharioDemanda';
+import { ConfiguracaoModal } from './components/ConfiguracaoModal';
 import { Relatorio } from './components/Relatorio';
 import { LoginPage } from './components/LoginPage';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const TOKEN_KEY = 'somma-auth-token';
 const USUARIO_KEY = 'somma-usuario';
+
+const CONFIG_PADRAO: EmpresaConfig = { colunas: COLUNAS_KANBAN, camposDemanda: CAMPOS_PADRAO };
 
 function lerSessao(): { usuario: AuthUser | null; token: string | null } {
   const token = localStorage.getItem(TOKEN_KEY);
@@ -50,6 +55,42 @@ function App() {
   const [demandaEditando, setDemandaEditando] = useState<Demanda | null>(null);
   const [demandaFichario, setDemandaFichario] = useState<Demanda | null>(null);
   const [relatorioAberto, setRelatorioAberto] = useState(false);
+  const [configAberto, setConfigAberto] = useState(false);
+  const [config, setConfig] = useState<EmpresaConfig>(CONFIG_PADRAO);
+
+  // Carrega a config da empresa (colunas + campos) após login
+  useEffect(() => {
+    if (!token) { setConfig(CONFIG_PADRAO); return; }
+    let cancelado = false;
+    fetch(`${API_URL}/api/empresa`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => (res.ok ? res.json() : null))
+      .then((data: EmpresaConfig | null) => {
+        if (cancelado || !data) return;
+        setConfig({
+          id: data.id,
+          nome: data.nome,
+          colunas: data.colunas?.length ? data.colunas : COLUNAS_KANBAN,
+          camposDemanda: data.camposDemanda?.length ? data.camposDemanda : CAMPOS_PADRAO,
+        });
+      })
+      .catch(() => { /* mantém o padrão em modo offline */ });
+    return () => { cancelado = true; };
+  }, [token]);
+
+  const handleSalvarConfig = useCallback(async (dados: { colunas?: ColunaDef[]; camposDemanda?: CampoDef[] }) => {
+    const res = await fetch(`${API_URL}/api/empresa`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(dados),
+    });
+    if (!res.ok) throw new Error('falha ao salvar config');
+    const data: EmpresaConfig = await res.json();
+    setConfig(prev => ({
+      ...prev,
+      colunas: data.colunas?.length ? data.colunas : prev.colunas,
+      camposDemanda: data.camposDemanda?.length ? data.camposDemanda : prev.camposDemanda,
+    }));
+  }, [token]);
   const [estatisticas, setEstatisticas] = useState({
     total: 0,
     pendentes: 0,
@@ -185,6 +226,7 @@ function App() {
       <Dashboard
         demandas={demandas}
         estatisticas={estatisticas}
+        colunas={config.colunas}
         busca={busca}
         setBusca={setBusca}
         filtroStatus={filtroStatus}
@@ -193,6 +235,7 @@ function App() {
         setVisualizacao={setVisualizacao}
         onNovaDemanda={handleNovaDemanda}
         onRelatorio={() => setRelatorioAberto(true)}
+        onConfig={() => setConfigAberto(true)}
         nomeUsuario={usuario.nome}
         statusConexao={statusConexao}
         onLogout={handleLogout}
@@ -202,6 +245,7 @@ function App() {
         {visualizacao === 'kanban' ? (
           <KanbanBoard
             demandas={demandasFiltradas}
+            colunas={config.colunas}
             onMoverDemanda={moverDemanda}
             onVerFichario={handleVerFichario}
           />
@@ -218,6 +262,8 @@ function App() {
       {modalAberto && (
         <ModalDemanda
           demanda={demandaEditando}
+          colunas={config.colunas}
+          campos={config.camposDemanda}
           onSalvar={handleSalvarDemanda}
           onFechar={handleFecharModal}
           isEditando={!!demandaEditando}
@@ -227,10 +273,21 @@ function App() {
       {demandaFichario && (
         <FicharioDemanda
           demanda={demandaFichario}
+          colunas={config.colunas}
+          campos={config.camposDemanda}
           onFechar={() => setDemandaFichario(null)}
           onEditar={handleEditar}
           onDuplicar={handleDuplicar}
           onExcluir={excluirDemanda}
+        />
+      )}
+
+      {configAberto && (
+        <ConfiguracaoModal
+          config={config}
+          podeEditar={usuario.papel !== 'membro'}
+          onSalvar={handleSalvarConfig}
+          onFechar={() => setConfigAberto(false)}
         />
       )}
 

@@ -53,6 +53,7 @@ export interface Demanda {
   status: StatusSituacao;
   prioridade: Prioridade;
   observacoes: string;
+  camposCustom?: Record<string, string>;
   historicoObservacoes?: Array<{
     id: string;
     data: string;
@@ -84,6 +85,53 @@ export interface ColunaKanban {
   titulo: string;
   cor: string;
 }
+
+// ── Configuração por empresa (Fase 2) ──
+export interface ColunaDef {
+  id: string;
+  titulo: string;
+  cor: string;
+  ordem?: number;
+}
+
+export type CampoTipo = 'texto' | 'numero' | 'data' | 'moeda' | 'selecao';
+
+export interface CampoDef {
+  key: string;
+  label: string;
+  tipo: CampoTipo;
+  obrigatorio: boolean;
+  ordem?: number;
+  ativo?: boolean;
+  opcoes?: string[];
+}
+
+export interface EmpresaConfig {
+  id?: string;
+  nome?: string;
+  colunas: ColunaDef[];
+  camposDemanda: CampoDef[];
+}
+
+// Campos padrão de uma demanda (iguais aos de hoje) — usados como fallback
+export const CAMPOS_PADRAO: CampoDef[] = [
+  { key: 'nomeCliente',  label: 'Cliente',         tipo: 'texto', obrigatorio: true,  ordem: 0, ativo: true },
+  { key: 'cnpj',         label: 'CNPJ',            tipo: 'texto', obrigatorio: false, ordem: 1, ativo: true },
+  { key: 'dataCriacao',  label: 'Aberto em',       tipo: 'data',  obrigatorio: false, ordem: 2, ativo: true },
+  { key: 'razaoSocial',  label: 'Nome do Contato', tipo: 'texto', obrigatorio: false, ordem: 3, ativo: true },
+  { key: 'contato',      label: 'Contato',         tipo: 'texto', obrigatorio: false, ordem: 4, ativo: true },
+  { key: 'cidade',       label: 'Cidade',          tipo: 'texto', obrigatorio: false, ordem: 5, ativo: true },
+  { key: 'marca',        label: 'Marca',           tipo: 'texto', obrigatorio: true,  ordem: 6, ativo: true },
+  { key: 'representante', label: 'Representante',  tipo: 'texto', obrigatorio: false, ordem: 7, ativo: true },
+  { key: 'valor',        label: 'Valor Total',     tipo: 'moeda', obrigatorio: false, ordem: 8, ativo: true },
+];
+
+// Campos que existem como coluna real no schema (o resto vai em camposCustom)
+export const CORE_FIELD_KEYS = [
+  'nomeCliente', 'cnpj', 'dataCriacao', 'razaoSocial', 'contato', 'cidade',
+  'marca', 'representante', 'valor', 'dataContato', 'encaminhadoPara',
+  'tipoProblema', 'prioridade', 'numeroNFDevolucao', 'dataRecebimentoNF',
+];
 
 export const TIPOS_PROBLEMA: Record<TipoProblema, string> = {
   devolucao_defeito: 'Devolução - Defeito',
