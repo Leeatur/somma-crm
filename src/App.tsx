@@ -262,6 +262,11 @@ function App() {
         )}
       </div>
 
+      <footer className="app-footer">
+        <span className="app-footer-brand">Somma Gestão de Demandas</span>
+        <span className="app-footer-rest">· by Somma Technology · Erechim | RS · (54) 9.9162-5024</span>
+      </footer>
+
       {modalAberto && (
         <ModalDemanda
           demanda={demandaEditando}
@@ -321,6 +326,14 @@ function App() {
           max-width: 1800px;
           margin: 0 auto;
         }
+
+        .app-footer {
+          display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+          gap: 7px; padding: 14px 16px 28px;
+          font-size: 0.8rem; text-align: center;
+        }
+        .app-footer-brand { font-weight: 700; color: var(--color-text-light); }
+        .app-footer-rest { color: var(--color-text-muted); }
 
         @media (max-width: 640px) {
           .content-area {
