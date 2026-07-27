@@ -49,9 +49,17 @@ export function useDemandasSocket(usuario: string, token?: string | null, empres
     if (modoOffline) salvarNoStorage(demandas, empresaId);
   }, [demandas, modoOffline, empresaId]);
 
-  // Tenta conectar ao backend em background (não bloqueia a UI)
+  // Conecta ao backend. Re-executa ao trocar de conta/empresa (token/empresaId),
+  // zerando os dados da conta anterior para NÃO vazar entre empresas.
   useEffect(() => {
     let cancelado = false;
+
+    // Mostra imediatamente só o cache DESTA empresa (vazio p/ conta nova)
+    setDemandas(carregarDoStorage(empresaId));
+    // Encerra o socket da empresa anterior
+    socketRef.current?.close();
+    socketRef.current = null;
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), BACKEND_TIMEOUT_MS);
 
@@ -76,15 +84,17 @@ export function useDemandasSocket(usuario: string, token?: string | null, empres
         console.warn('[SOMMA CRM] Backend indisponível — modo offline');
         setModoOffline(true);
         setStatusConexao('offline');
-        // mantém dados do localStorage já carregados
+        // mantém o cache desta empresa já carregado acima
       });
 
     return () => {
       cancelado = true;
       controller.abort();
+      socketRef.current?.close();
+      socketRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token, empresaId]);
 
   function iniciarSocket() {
     const newSocket = io(API_URL, { reconnectionAttempts: 5 });
