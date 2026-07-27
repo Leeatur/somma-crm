@@ -4,6 +4,13 @@ export interface AuthUser {
   id: string;
   nome: string;
   email: string;
+  empresaId?: string;
+  papel?: string;
+}
+
+export interface Empresa {
+  id: string;
+  nome: string;
 }
 
 export type TipoProblema = 

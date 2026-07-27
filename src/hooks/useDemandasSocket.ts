@@ -3,22 +3,24 @@ import type { Demanda } from '../types';
 import { io, type Socket } from 'socket.io-client';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-const STORAGE_KEY = 'somma_crm_demandas';
+// Cache local escopado por empresa — evita que os dados de uma empresa
+// apareçam para outra no mesmo navegador.
+const chaveStorage = (empresaId?: string) => `somma_crm_demandas_${empresaId || 'offline'}`;
 // Render free tier pode levar até 60s para acordar
 const BACKEND_TIMEOUT_MS = 70000;
 
-function carregarDoStorage(): Demanda[] {
+function carregarDoStorage(empresaId?: string): Demanda[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(chaveStorage(empresaId));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function salvarNoStorage(demandas: Demanda[]): void {
+function salvarNoStorage(demandas: Demanda[], empresaId?: string): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(demandas));
+    localStorage.setItem(chaveStorage(empresaId), JSON.stringify(demandas));
   } catch {}
 }
 
@@ -28,9 +30,9 @@ function gerarId(): string {
 
 export type StatusConexao = 'conectando' | 'online' | 'offline';
 
-export function useDemandasSocket(usuario: string, token?: string | null) {
+export function useDemandasSocket(usuario: string, token?: string | null, empresaId?: string) {
   // Carrega do localStorage imediatamente — sem tela de loading
-  const [demandas, setDemandas] = useState<Demanda[]>(carregarDoStorage);
+  const [demandas, setDemandas] = useState<Demanda[]>(() => carregarDoStorage(empresaId));
   const [carregando] = useState(false);
   const [statusConexao, setStatusConexao] = useState<StatusConexao>('conectando');
   const [conectado, setConectado] = useState(false);
@@ -44,8 +46,8 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
   };
 
   useEffect(() => {
-    if (modoOffline) salvarNoStorage(demandas);
-  }, [demandas, modoOffline]);
+    if (modoOffline) salvarNoStorage(demandas, empresaId);
+  }, [demandas, modoOffline, empresaId]);
 
   // Tenta conectar ao backend em background (não bloqueia a UI)
   useEffect(() => {
@@ -55,12 +57,15 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
 
     setStatusConexao('conectando');
 
-    fetch(`${API_URL}/api/demandas`, { signal: controller.signal })
-      .then(res => res.json())
+    fetch(`${API_URL}/api/demandas`, { signal: controller.signal, headers: authHeaders() })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((data: Demanda[]) => {
         clearTimeout(timeoutId);
         if (cancelado) return;
-        setDemandas(data);
+        setDemandas(Array.isArray(data) ? data : []);
         setModoOffline(false);
         setStatusConexao('online');
         iniciarSocket();
@@ -89,7 +94,7 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
       setConectado(true);
       setModoOffline(false);
       setStatusConexao('online');
-      newSocket.emit('usuario:identificar', usuario);
+      newSocket.emit('usuario:identificar', { token, nome: usuario });
     });
 
     newSocket.on('disconnect', () => {
@@ -134,7 +139,7 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
       } as Demanda;
       setDemandas(prev => {
         const atualizado = [nova, ...prev];
-        salvarNoStorage(atualizado);
+        salvarNoStorage(atualizado, empresaId);
         return atualizado;
       });
       return nova;
@@ -146,7 +151,7 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
     });
     const novaDemanda = await response.json();
     return novaDemanda;
-  }, [modoOffline, usuario]);
+  }, [modoOffline, usuario, empresaId]);
 
   const atualizarDemanda = useCallback(async (id: string, dados: Partial<Demanda>) => {
     if (modoOffline) {
@@ -160,7 +165,7 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
           }
           return d;
         });
-        salvarNoStorage(lista);
+        salvarNoStorage(lista, empresaId);
         return lista;
       });
       return atualizada;
@@ -172,7 +177,7 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
     });
     const demandaAtualizada = await response.json();
     return demandaAtualizada;
-  }, [modoOffline, usuario]);
+  }, [modoOffline, usuario, empresaId]);
 
   const moverDemanda = useCallback(async (id: string, novoStatus: Demanda['status']) => {
     return atualizarDemanda(id, { status: novoStatus });
@@ -182,7 +187,7 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
     if (modoOffline) {
       setDemandas(prev => {
         const lista = prev.filter(d => (d._id || d.id) !== id);
-        salvarNoStorage(lista);
+        salvarNoStorage(lista, empresaId);
         return lista;
       });
       return;
@@ -192,7 +197,7 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
       headers: authHeaders(),
       body: JSON.stringify({ usuario }),
     });
-  }, [modoOffline, usuario]);
+  }, [modoOffline, usuario, empresaId]);
 
   const buscarDemandas = useCallback((termo: string) => {
     if (!termo.trim()) return demandas;
@@ -227,12 +232,12 @@ export function useDemandasSocket(usuario: string, token?: string | null) {
   }, [demandas]);
 
   const carregarDemandas = useCallback(async () => {
-    if (modoOffline) { setDemandas(carregarDoStorage()); return; }
+    if (modoOffline) { setDemandas(carregarDoStorage(empresaId)); return; }
     try {
       const response = await fetch(`${API_URL}/api/demandas`);
       setDemandas(await response.json());
     } catch {}
-  }, [modoOffline]);
+  }, [modoOffline, empresaId]);
 
   return {
     demandas,

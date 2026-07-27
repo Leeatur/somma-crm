@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, LogIn, UserPlus, WifiOff } from 'lucide-react';
+import { Mail, Lock, User, Building2, Eye, EyeOff, LogIn, UserPlus, WifiOff } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface LoginPageProps {
-  onLogin: (token: string, usuario: { id: string; nome: string; email: string }) => void;
+  onLogin: (token: string, usuario: { id: string; nome: string; email: string; empresaId?: string; papel?: string }) => void;
   onOffline: (nome: string) => void;
 }
 
@@ -20,6 +20,7 @@ export function LoginPage({ onLogin, onOffline }: LoginPageProps) {
   const [loginCarregando, setLoginCarregando] = useState(false);
 
   const [cadNome, setCadNome] = useState('');
+  const [cadEmpresa, setCadEmpresa] = useState('');
   const [cadEmail, setCadEmail] = useState('');
   const [cadSenha, setCadSenha] = useState('');
   const [cadSenhaConf, setCadSenhaConf] = useState('');
@@ -88,6 +89,7 @@ export function LoginPage({ onLogin, onOffline }: LoginPageProps) {
   const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
     setCadErro('');
+    if (!cadEmpresa.trim()) { setCadErro('Informe o nome da empresa.'); return; }
     if (cadSenha !== cadSenhaConf) { setCadErro('As senhas não coincidem.'); return; }
     if (cadSenha.length < 6) { setCadErro('A senha deve ter no mínimo 6 caracteres.'); return; }
     setCadCarregando(true);
@@ -95,7 +97,7 @@ export function LoginPage({ onLogin, onOffline }: LoginPageProps) {
       const res = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: cadNome, email: cadEmail, senha: cadSenha }),
+        body: JSON.stringify({ nome: cadNome, empresaNome: cadEmpresa, email: cadEmail, senha: cadSenha }),
       });
       const data = await res.json();
       if (!res.ok) { setCadErro(data.error || 'Erro ao criar conta.'); return; }
@@ -221,6 +223,17 @@ export function LoginPage({ onLogin, onOffline }: LoginPageProps) {
                     placeholder="Seu nome"
                     required
                     autoFocus
+                    disabled={cadCarregando}
+                  />
+                </div>
+                <div className="lp-field">
+                  <label><Building2 size={13} /> Nome da empresa</label>
+                  <input
+                    type="text"
+                    value={cadEmpresa}
+                    onChange={e => setCadEmpresa(e.target.value)}
+                    placeholder="Sua empresa (cria um espaço só seu)"
+                    required
                     disabled={cadCarregando}
                   />
                 </div>

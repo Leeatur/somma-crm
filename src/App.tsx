@@ -41,7 +41,7 @@ function App() {
     excluirDemanda,
     buscarDemandas,
     obterEstatisticas,
-  } = useDemandasSocket(usuario?.nome ?? '', token);
+  } = useDemandasSocket(usuario?.nome ?? '', token, usuario?.empresaId);
 
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
