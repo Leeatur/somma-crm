@@ -1,5 +1,5 @@
 import type { Demanda, ColunaDef } from '../types';
-import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Siren, Settings2 } from 'lucide-react';
+import { Search, Filter, Plus, LayoutGrid, List, CheckCircle2, Clock, AlertTriangle, BarChart3, LogOut, FileText, Siren, Settings2, Users } from 'lucide-react';
 
 interface DashboardProps {
   demandas: Demanda[];
@@ -22,6 +22,7 @@ interface DashboardProps {
   onNovaDemanda: () => void;
   onRelatorio: () => void;
   onConfig: () => void;
+  onEquipe: () => void;
   nomeUsuario: string;
   statusConexao: 'conectando' | 'online' | 'offline';
   onLogout: () => void;
@@ -40,6 +41,7 @@ export function Dashboard({
   onNovaDemanda,
   onRelatorio,
   onConfig,
+  onEquipe,
   nomeUsuario,
   statusConexao,
   onLogout,
@@ -78,6 +80,10 @@ export function Dashboard({
             <span className="dash-user-avatar">{nomeUsuario.charAt(0).toUpperCase()}</span>
             <span className="dash-user-name">{nomeUsuario}</span>
             <LogOut size={13} style={{ opacity: 0.6, marginLeft: 2 }} />
+          </button>
+
+          <button className="dash-btn-rel" onClick={onEquipe} title="Gerenciar equipe">
+            <Users size={15} /> Equipe
           </button>
 
           <button className="dash-btn-rel" onClick={onConfig} title="Configurar colunas do kanban">

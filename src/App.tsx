@@ -8,6 +8,7 @@ import { ListaDemandas } from './components/ListaDemandas';
 import { ModalDemanda } from './components/ModalDemanda';
 import { FicharioDemanda } from './components/FicharioDemanda';
 import { ConfiguracaoModal } from './components/ConfiguracaoModal';
+import { EquipeModal } from './components/EquipeModal';
 import { Relatorio } from './components/Relatorio';
 import { LoginPage } from './components/LoginPage';
 
@@ -56,6 +57,7 @@ function App() {
   const [demandaFichario, setDemandaFichario] = useState<Demanda | null>(null);
   const [relatorioAberto, setRelatorioAberto] = useState(false);
   const [configAberto, setConfigAberto] = useState(false);
+  const [equipeAberto, setEquipeAberto] = useState(false);
   const [config, setConfig] = useState<EmpresaConfig>(CONFIG_PADRAO);
 
   // Carrega a config da empresa (colunas + campos) após login
@@ -236,6 +238,7 @@ function App() {
         onNovaDemanda={handleNovaDemanda}
         onRelatorio={() => setRelatorioAberto(true)}
         onConfig={() => setConfigAberto(true)}
+        onEquipe={() => setEquipeAberto(true)}
         nomeUsuario={usuario.nome}
         statusConexao={statusConexao}
         onLogout={handleLogout}
@@ -288,6 +291,15 @@ function App() {
           podeEditar={usuario.papel !== 'membro'}
           onSalvar={handleSalvarConfig}
           onFechar={() => setConfigAberto(false)}
+        />
+      )}
+
+      {equipeAberto && (
+        <EquipeModal
+          token={token}
+          usuarioId={usuario.id}
+          podeGerenciar={usuario.papel !== 'membro'}
+          onFechar={() => setEquipeAberto(false)}
         />
       )}
 
